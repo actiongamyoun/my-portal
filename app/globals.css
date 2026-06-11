@@ -17,6 +17,8 @@
 
 html, body {
   background: var(--bg);
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
   color: var(--ink);
   font-family: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
   font-size: 15px;
@@ -46,7 +48,7 @@ input, textarea { font: inherit; color: inherit; }
   gap: 16px;
   align-items: start;
 }
-.col { display: flex; flex-direction: column; gap: 16px; }
+.col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
 @media (max-width: 1000px) {
   .grid { grid-template-columns: repeat(2, 1fr); }
@@ -101,6 +103,7 @@ input, textarea { font: inherit; color: inherit; }
   padding: 16px;
   position: relative;
   overflow: hidden;
+  min-width: 0;
 }
 .card::before {
   content: "";
@@ -136,7 +139,7 @@ input, textarea { font: inherit; color: inherit; }
 .event { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .event:last-child { border-bottom: none; }
 .event-time { font-family: var(--mono); font-size: 12px; color: var(--accent); font-weight: 600; min-width: 44px; padding-top: 2px; }
-.event-title { font-size: 14px; font-weight: 600; }
+.event-title { font-size: 14px; font-weight: 600; word-break: break-word; }
 .event-loc { font-size: 12px; color: var(--muted); }
 
 /* ── 메일 ── */
@@ -191,7 +194,7 @@ input, textarea { font: inherit; color: inherit; }
 }
 .news-item { display: block; padding: 7px 0; border-bottom: 1px solid var(--line); }
 .news-item:last-child { border-bottom: none; }
-.news-title { font-size: 13.5px; font-weight: 500; }
+.news-title { font-size: 13.5px; font-weight: 500; word-break: break-word; }
 .news-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
 /* ── 내 앱 ── */
@@ -255,7 +258,7 @@ input, textarea { font: inherit; color: inherit; }
 .stock-note { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 10px; text-align: right; }
 
 /* ── AI 브리핑 ── */
-.briefing-text { white-space: pre-wrap; font-size: 14px; line-height: 1.7; margin-bottom: 12px; }
+.briefing-text { white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.7; margin-bottom: 12px; }
 .briefing-btn {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 10px; border-radius: 10px;
@@ -263,3 +266,24 @@ input, textarea { font: inherit; color: inherit; }
 }
 .briefing-btn:hover { background: #2a3645; }
 .briefing-btn:disabled { opacity: 0.6; cursor: default; }
+
+
+/* ── 모바일 보정 ── */
+@media (max-width: 680px) {
+  .shell { padding: 14px 12px 48px; }
+  .topbar { flex-wrap: wrap; row-gap: 8px; }
+  .greet { font-size: 19px; }
+  .chips { gap: 6px; margin: 10px 0 16px; }
+  .chip { padding: 6px 11px; font-size: 12.5px; }
+  .chip .sub { display: none; }            /* 좁은 화면: 부가 정보 숨김 */
+  .card { padding: 14px; border-radius: 12px; }
+  .grid { gap: 12px; }
+  .col { gap: 12px; }
+  /* iOS: 입력칸 폰트 16px 미만이면 포커스 시 화면이 강제 확대됨 → 방지 */
+  input, textarea { font-size: 16px; }
+  .stock-chg { min-width: 64px; }
+  .stock-price { font-size: 12.5px; }
+  .event-time { min-width: 40px; }
+  .apps-grid { gap: 6px; }
+  .app-tile { padding: 10px 4px; }
+}
