@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import CalendarCard from "./CalendarCard";
+import BriefingCard from "./BriefingCard";
+import StocksCard from "./StocksCard";
 import GmailCard from "./GmailCard";
 import TodoCard from "./TodoCard";
 import MemoCard from "./MemoCard";
@@ -66,6 +68,7 @@ export default function Dashboard() {
 
       <div className="grid">
         <div className="col">
+          <BriefingCard />
           <CalendarCard />
           <TodoCard />
         </div>
@@ -74,6 +77,7 @@ export default function Dashboard() {
           <MemoCard />
         </div>
         <div className="col">
+          <StocksCard />
           <NewsCard />
           <AppsCard />
         </div>
