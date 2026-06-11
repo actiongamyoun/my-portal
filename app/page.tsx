@@ -3,7 +3,7 @@ import Dashboard from "@/components/Dashboard";
 
 function kstGreeting() {
   const h = Number(
-    new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", hour: "numeric", hour12: false }).format(new Date())
+    new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", hour: "numeric", hour12: false }).format(new Date())
   );
   if (h < 6) return "고요한 새벽이에요";
   if (h < 12) return "좋은 아침이에요";
