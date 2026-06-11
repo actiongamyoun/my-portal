@@ -241,3 +241,25 @@ input, textarea { font: inherit; color: inherit; }
   background: var(--ink); color: #fff; font-weight: 600; font-size: 14px;
 }
 .google-btn:hover { background: #2a3645; }
+
+/* ── 시세 ── */
+.stock-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.stock-row:last-of-type { border-bottom: none; }
+.stock-name { flex: 1; font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stock-price { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+.stock-chg { font-family: var(--mono); font-size: 12px; font-weight: 600; min-width: 76px; text-align: right; }
+.stock-chg.up { color: #d92d4c; }
+.stock-chg.down { color: #1f6fe0; }
+.stock-chg.flat { color: var(--muted); }
+.stock-divider { font-size: 11px; color: var(--muted); margin: 10px 0 2px; letter-spacing: 0.04em; }
+.stock-note { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 10px; text-align: right; }
+
+/* ── AI 브리핑 ── */
+.briefing-text { white-space: pre-wrap; font-size: 14px; line-height: 1.7; margin-bottom: 12px; }
+.briefing-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; border-radius: 10px;
+  background: var(--ink); color: #fff; font-weight: 600; font-size: 13.5px;
+}
+.briefing-btn:hover { background: #2a3645; }
+.briefing-btn:disabled { opacity: 0.6; cursor: default; }
