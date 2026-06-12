@@ -54,7 +54,7 @@ async function quoteFor(raw: string) {
     return d ? pack(raw, d.stockName ?? raw, d) : null;
   }
   // 3) 해외 종목: 나스닥(.O) → 뉴욕(.N) → 입력 그대로
-  for (const sfx of [".O", ".N", ""]) {
+  for (const sfx of [".O", ".K", ".N", ""]) {
     const d = await jget(`https://api.stock.naver.com/stock/${encodeURIComponent(raw + sfx)}/basic`);
     if (d?.closePrice) return pack(raw, d.stockName ?? raw, d);
   }
