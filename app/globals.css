@@ -320,3 +320,7 @@ input, textarea { font: inherit; color: inherit; }
   50% { box-shadow: 0 0 0 7px rgba(255, 122, 61, 0.22); }
 }
 @media (prefers-reduced-motion: reduce) { .icon-btn.mic.listening { animation: none; } }
+
+/* ── 정책 탭 ── */
+.policy-item { display: flex; gap: 9px; align-items: flex-start; }
+.policy-icon { font-size: 18px; margin-top: 2px; flex-shrink: 0; }
