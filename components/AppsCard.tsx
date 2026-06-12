@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+type Health = Record<string, boolean>;
+
 type App = { id: number; name: string; url: string; icon: string };
 const KEY = "portal.apps.v1";
 
@@ -21,6 +23,7 @@ export default function AppsCard() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [health, setHealth] = useState<Health>({});
 
   useEffect(() => {
     try {
@@ -35,6 +38,15 @@ export default function AppsCard() {
   useEffect(() => {
     if (loaded) localStorage.setItem(KEY, JSON.stringify(apps));
   }, [apps, loaded]);
+
+  useEffect(() => {
+    if (!loaded || apps.length === 0) return;
+    const urls = apps.map((a) => a.url).join(",");
+    fetch(`/api/health?urls=${encodeURIComponent(urls)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setHealth(d.results ?? {}))
+      .catch(() => {});
+  }, [loaded, apps]);
 
   const add = () => {
     const n = name.trim();
@@ -57,6 +69,12 @@ export default function AppsCard() {
       <div className={`apps-grid${editing ? " editing" : ""}`}>
         {apps.map((a) => (
           <a key={a.id} className="app-tile" href={editing ? undefined : a.url} target="_blank" rel="noreferrer">
+            {health[a.url] !== undefined && (
+              <span
+                className={`app-dot ${health[a.url] ? "ok" : "bad"}`}
+                title={health[a.url] ? "정상" : "응답 없음"}
+              />
+            )}
             <span className="material-icons-round">{a.icon}</span>
             <span className="app-name">{a.name}</span>
             {editing && (
