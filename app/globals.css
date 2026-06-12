@@ -121,24 +121,31 @@ input, textarea { font: inherit; color: inherit; }
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 0;
   padding: 11px 14px;
-  color: #fff;
 }
-.card-head .material-icons-round { color: #fff; font-size: 18px; }
-.card-head .badge, .card-head .badge.signal { background: rgba(255, 255, 255, 0.22); color: #fff; }
-.card-head .text-btn { color: #fff; opacity: 0.92; }
-.card-head .memo-saved { color: rgba(255, 255, 255, 0.85); }
-.collapse-btn { display: inline-flex; color: #fff; opacity: 0.9; }
+.card-head .material-icons-round { font-size: 18px; }
+.card-head .badge, .card-head .badge.signal { background: rgba(0, 0, 0, 0.06); color: inherit; }
+.card-head .text-btn { color: inherit; opacity: 0.85; }
+.card-head .memo-saved { color: inherit; opacity: 0.7; }
+.collapse-btn { display: inline-flex; color: inherit; opacity: 0.75; }
 
-/* 위젯 컬러 밴드 */
-.band-orange .card-head { background: linear-gradient(90deg, #ff7a3d, #ff9d3d); }
-.band-blue   .card-head { background: linear-gradient(90deg, #0f5e9c, #1a7fd4); }
-.band-red    .card-head { background: linear-gradient(90deg, #d94335, #ef6a52); }
-.band-green  .card-head { background: linear-gradient(90deg, #0f9c6e, #27c08d); }
-.band-amber  .card-head { background: linear-gradient(90deg, #d98e0b, #f0b429); }
-.band-violet .card-head { background: linear-gradient(90deg, #5b53d4, #7c6cf0); }
-.band-slate  .card-head { background: linear-gradient(90deg, #3a4656, #5d6e85); }
-.band-cyan   .card-head { background: linear-gradient(90deg, #0e8c9c, #23b3c4); }
-.card-title { font-size: 14.5px; font-weight: 700; flex: 1; color: #fff; }
+/* 위젯 컬러 밴드 — 뮤트 파스텔 */
+.band-orange .card-head { background: #fdeee4; color: #b35325; }
+.band-orange .card-head .material-icons-round { color: #d96a32; }
+.band-blue   .card-head { background: #e7eff7; color: #1d5582; }
+.band-blue   .card-head .material-icons-round { color: #2a6ca5; }
+.band-red    .card-head { background: #fbe9e7; color: #a93a2e; }
+.band-red    .card-head .material-icons-round { color: #c9503f; }
+.band-green  .card-head { background: #e6f4ee; color: #19704f; }
+.band-green  .card-head .material-icons-round { color: #1f8a62; }
+.band-amber  .card-head { background: #faf1dd; color: #92660a; }
+.band-amber  .card-head .material-icons-round { color: #b3820f; }
+.band-violet .card-head { background: #edebfa; color: #4a4399; }
+.band-violet .card-head .material-icons-round { color: #5e55c2; }
+.band-slate  .card-head { background: #eceff3; color: #3a4656; }
+.band-slate  .card-head .material-icons-round { color: #4d5b6e; }
+.band-cyan   .card-head { background: #e4f3f5; color: #0c6975; }
+.band-cyan   .card-head .material-icons-round { color: #11859b; }
+.card-title { font-size: 14.5px; font-weight: 700; flex: 1; color: inherit; }
 .badge {
   font-family: var(--mono);
   font-size: 12px; font-weight: 600;
