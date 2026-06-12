@@ -100,28 +100,45 @@ input, textarea { font: inherit; color: inherit; }
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 0;
   position: relative;
   overflow: hidden;
   min-width: 0;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  animation: card-rise 0.45s ease both;
 }
-.card::before {
-  content: "";
-  position: absolute;
-  left: 0; top: 14px; bottom: 14px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--accent);
+.card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(22, 32, 43, 0.1); }
+.col .card:nth-child(2) { animation-delay: 0.07s; }
+.col .card:nth-child(3) { animation-delay: 0.14s; }
+@keyframes card-rise { from { opacity: 0; transform: translateY(12px); } }
+@media (prefers-reduced-motion: reduce) {
+  .card { animation: none; transition: none; }
+  .card:hover { transform: none; box-shadow: none; }
 }
-.card.tick-signal::before { background: var(--signal); }
-.card.tick-ok::before { background: var(--ok); }
+.card-body { padding: 12px 14px 14px; }
 
 .card-head {
   display: flex; align-items: center; gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
+  padding: 11px 14px;
+  color: #fff;
 }
-.card-head .material-icons-round { color: var(--accent); }
-.card-title { font-size: 15px; font-weight: 700; flex: 1; }
+.card-head .material-icons-round { color: #fff; font-size: 18px; }
+.card-head .badge, .card-head .badge.signal { background: rgba(255, 255, 255, 0.22); color: #fff; }
+.card-head .text-btn { color: #fff; opacity: 0.92; }
+.card-head .memo-saved { color: rgba(255, 255, 255, 0.85); }
+.collapse-btn { display: inline-flex; color: #fff; opacity: 0.9; }
+
+/* 위젯 컬러 밴드 */
+.band-orange .card-head { background: linear-gradient(90deg, #ff7a3d, #ff9d3d); }
+.band-blue   .card-head { background: linear-gradient(90deg, #0f5e9c, #1a7fd4); }
+.band-red    .card-head { background: linear-gradient(90deg, #d94335, #ef6a52); }
+.band-green  .card-head { background: linear-gradient(90deg, #0f9c6e, #27c08d); }
+.band-amber  .card-head { background: linear-gradient(90deg, #d98e0b, #f0b429); }
+.band-violet .card-head { background: linear-gradient(90deg, #5b53d4, #7c6cf0); }
+.band-slate  .card-head { background: linear-gradient(90deg, #3a4656, #5d6e85); }
+.band-cyan   .card-head { background: linear-gradient(90deg, #0e8c9c, #23b3c4); }
+.card-title { font-size: 14.5px; font-weight: 700; flex: 1; color: #fff; }
 .badge {
   font-family: var(--mono);
   font-size: 12px; font-weight: 600;
@@ -276,7 +293,9 @@ input, textarea { font: inherit; color: inherit; }
   .chips { gap: 6px; margin: 10px 0 16px; }
   .chip { padding: 6px 11px; font-size: 12.5px; }
   .chip .sub { display: none; }            /* 좁은 화면: 부가 정보 숨김 */
-  .card { padding: 14px; border-radius: 12px; }
+  .card { border-radius: 12px; }
+  .card-head { padding: 10px 12px; }
+  .card-body { padding: 11px 12px 12px; }
   .grid { gap: 12px; }
   .col { gap: 12px; }
   /* iOS: 입력칸 폰트 16px 미만이면 포커스 시 화면이 강제 확대됨 → 방지 */
