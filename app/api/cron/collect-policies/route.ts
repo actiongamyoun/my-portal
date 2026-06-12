@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
   const fresh = all.filter((x) => !existing.has(x.url)).slice(0, 10);
 
   if (fresh.length === 0)
-    return NextResponse.json({ feeds: feedNotes, fetched: all.length, fresh: 0, saved: 0 });
+    return NextResponse.json({ region: process.env.VERCEL_REGION ?? "unknown", feeds: feedNotes, fetched: all.length, fresh: 0, saved: 0 });
 
   // 3) AI 분류 (병렬)
   const settled = await Promise.allSettled(fresh.map((item) => classify(item, AK)));
