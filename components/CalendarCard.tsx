@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Ev = { id: string; title: string; start: string; allDay: boolean; location: string; link: string };
 
@@ -10,6 +10,18 @@ export default function CalendarCard() {
   const [text, setText] = useState("");
   const [adding, setAdding] = useState(false);
   const [msg, setMsg] = useState("");
+  const [listening, setListening] = useState(false);
+  const [voiceOk, setVoiceOk] = useState(false);
+  const recRef = useRef<any>(null);
+  const finalRef = useRef("");
+
+  useEffect(() => {
+    setVoiceOk(
+      typeof window !== "undefined" &&
+        !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+    );
+    return () => { try { recRef.current?.abort(); } catch {} };
+  }, []);
 
   const load = useCallback(() => {
     fetch("/api/calendar")
@@ -20,8 +32,8 @@ export default function CalendarCard() {
 
   useEffect(() => { load(); }, [load]);
 
-  const add = async () => {
-    const t = text.trim();
+  const add = useCallback(async (raw?: string) => {
+    const t = (raw ?? text).trim();
     if (!t || adding) return;
     setAdding(true);
     setMsg("");
@@ -47,6 +59,46 @@ export default function CalendarCard() {
     } finally {
       setAdding(false);
     }
+  }, [text, adding, load]);
+
+  const startVoice = () => {
+    if (listening) { try { recRef.current?.stop(); } catch {} return; }
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    const rec = new SR();
+    recRef.current = rec;
+    rec.lang = "ko-KR";
+    rec.interimResults = true;
+    rec.continuous = false;
+    finalRef.current = "";
+
+    rec.onresult = (e: any) => {
+      let interim = "", final = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const tr = e.results[i][0].transcript;
+        if (e.results[i].isFinal) final += tr;
+        else interim += tr;
+      }
+      if (final) finalRef.current += final;
+      setText((finalRef.current + interim).trim());
+    };
+    rec.onerror = (e: any) => {
+      setListening(false);
+      setMsg(
+        e.error === "not-allowed"
+          ? "마이크 권한을 허용해 주세요 (주소창 자물쇠 → 마이크)"
+          : "음성 인식 실패 — 다시 한번 말씀해 주세요"
+      );
+    };
+    rec.onend = () => {
+      setListening(false);
+      const t = finalRef.current.trim();
+      if (t) add(t); // 원클릭: 말이 끝나면 자동 등록
+    };
+
+    setMsg("");
+    setListening(true);
+    rec.start();
   };
 
   const fmt = (e: Ev) =>
@@ -69,11 +121,21 @@ export default function CalendarCard() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && add()}
-          placeholder='예: 내일 14시 PSPC 검사 입회'
+          placeholder={listening ? "듣고 있어요… 말씀하세요" : "예: 내일 14시 PSPC 검사 입회"}
           aria-label="자연어 일정 입력"
           disabled={adding}
         />
-        <button className="icon-btn" onClick={add} aria-label="일정 등록" disabled={adding}>
+        {voiceOk && (
+          <button
+            className={`icon-btn mic${listening ? " listening" : ""}`}
+            onClick={startVoice}
+            aria-label={listening ? "듣기 중지" : "음성으로 일정 말하기"}
+            disabled={adding}
+          >
+            <span className="material-icons-round">{listening ? "graphic_eq" : "mic"}</span>
+          </button>
+        )}
+        <button className="icon-btn" onClick={() => add()} aria-label="일정 등록" disabled={adding}>
           <span className="material-icons-round">{adding ? "hourglass_top" : "auto_awesome"}</span>
         </button>
       </div>
