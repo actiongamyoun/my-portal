@@ -31,7 +31,22 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/weather").then((r) => (r.ok ? r.json() : null)).then(setWeather).catch(() => {});
+    const loadWeather = (qs = "") =>
+      fetch(`/api/weather${qs}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then(setWeather)
+        .catch(() => { if (qs) loadWeather(); }); // 좌표 조회 실패 시 기본 지역 폴백
+
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) =>
+          loadWeather(`?lat=${pos.coords.latitude.toFixed(2)}&lon=${pos.coords.longitude.toFixed(2)}`),
+        () => loadWeather(), // 권한 거부/실패 → 기본 지역
+        { timeout: 5000, maximumAge: 600000 }
+      );
+    } else {
+      loadWeather();
+    }
     fetch("/api/fx").then((r) => (r.ok ? r.json() : null)).then(setFx).catch(() => {});
   }, []);
 
@@ -47,6 +62,7 @@ export default function Dashboard() {
           {weather ? (
             <>
               <span className="num">{weather.temp}°</span>
+              <span>{weather.city}</span>
               <span className="sub">{weather.desc} · 습도 {weather.humidity}%</span>
             </>
           ) : (
