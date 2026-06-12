@@ -80,11 +80,7 @@ export async function GET(req: NextRequest) {
     !!secret &&
     (req.headers.get("authorization") === `Bearer ${secret}` ||
       req.nextUrl.searchParams.get("secret") === secret);
-  if (!authed)
-    return NextResponse.json(
-      { error: "unauthorized", serverHasSecret: !!secret, serverSecretLength: secret?.length ?? 0 },
-      { status: 401 }
-    );
+  if (!authed) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
