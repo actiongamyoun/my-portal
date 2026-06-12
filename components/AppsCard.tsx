@@ -58,7 +58,7 @@ export default function AppsCard() {
   };
 
   return (
-    <section className="card">
+    <section className="card band-cyan">
       <div className="card-head">
         <span className="material-icons-round">rocket_launch</span>
         <span className="card-title">내 앱</span>
@@ -66,6 +66,8 @@ export default function AppsCard() {
           {editing ? "완료" : "편집"}
         </button>
       </div>
+
+      <div className="card-body">
       <div className={`apps-grid${editing ? " editing" : ""}`}>
         {apps.map((a) => (
           <a key={a.id} className="app-tile" href={editing ? undefined : a.url} target="_blank" rel="noreferrer">
@@ -103,6 +105,7 @@ export default function AppsCard() {
           <button className="text-btn" onClick={() => setAdding(true)}>+ 앱 추가</button>
         </div>
       )}
+    </div>
     </section>
   );
 }

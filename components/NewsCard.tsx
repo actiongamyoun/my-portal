@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCollapse } from "./useCollapse";
 
 type News = { title: string; link: string; source: string; pubDate: string };
 
 export default function NewsCard() {
+  const { collapsed, toggle } = useCollapse("news");
   const [tab, setTab] = useState<"google" | "naver">("google");
   const [query, setQuery] = useState("경제");
   const [input, setInput] = useState("경제");
@@ -32,11 +34,17 @@ export default function NewsCard() {
   };
 
   return (
-    <section className="card">
+    <section className="card band-slate">
       <div className="card-head">
         <span className="material-icons-round">newspaper</span>
         <span className="card-title">뉴스</span>
+              <button className="collapse-btn" onClick={toggle} aria-label={collapsed ? "펼치기" : "접기"}>
+          <span className="material-icons-round">{collapsed ? "expand_more" : "expand_less"}</span>
+        </button>
       </div>
+
+      {!collapsed && (
+      <div className="card-body">
       <div className="news-tabs">
         <button className={`news-tab${tab === "google" ? " active" : ""}`} onClick={() => setTab("google")}>
           구글 헤드라인
@@ -66,6 +74,8 @@ export default function NewsCard() {
           </div>
         </a>
       ))}
+    </div>
+      )}
     </section>
   );
 }

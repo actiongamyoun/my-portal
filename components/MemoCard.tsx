@@ -27,11 +27,13 @@ export default function MemoCard() {
   };
 
   return (
-    <section className="card">
+    <section className="card band-amber">
       <div className="card-head">
         <span className="material-icons-round">edit_note</span>
         <span className="card-title">메모</span>
       </div>
+
+      <div className="card-body">
       <textarea
         className="memo-area"
         value={memo}
@@ -40,6 +42,7 @@ export default function MemoCard() {
         aria-label="메모"
       />
       {savedAt && <div className="memo-saved">저장됨 {savedAt}</div>}
+    </div>
     </section>
   );
 }

@@ -94,7 +94,7 @@ export default function StocksCard() {
   };
 
   return (
-    <section className="card">
+    <section className="card band-violet">
       <div className="card-head">
         <span className="material-icons-round">trending_up</span>
         <span className="card-title">시세</span>
@@ -105,6 +105,8 @@ export default function StocksCard() {
           {editing ? "완료" : "편집"}
         </button>
       </div>
+
+      <div className="card-body">
 
       {INDICES.map((i) => (
         <Row key={i.symbol} label={i.label} q={byInput(i.symbol)} />
@@ -131,6 +133,7 @@ export default function StocksCard() {
         </div>
       )}
       <div className="stock-note">야후 파이낸스 · 지연 시세</div>
+    </div>
     </section>
   );
 }

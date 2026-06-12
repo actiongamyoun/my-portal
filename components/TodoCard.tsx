@@ -29,12 +29,14 @@ export default function TodoCard() {
   const remain = todos.filter((t) => !t.done).length;
 
   return (
-    <section className="card tick-ok">
+    <section className="card band-green">
       <div className="card-head">
-        <span className="material-icons-round" style={{ color: "var(--ok)" }}>check_circle</span>
+        <span className="material-icons-round">check_circle</span>
         <span className="card-title">할일</span>
         <span className="badge">{remain} 남음</span>
       </div>
+
+      <div className="card-body">
       <div className="todo-input-row">
         <input
           value={text}
@@ -63,6 +65,7 @@ export default function TodoCard() {
           </button>
         </div>
       ))}
+    </div>
     </section>
   );
 }

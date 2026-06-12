@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCollapse } from "./useCollapse";
 
 const KEY = "portal.briefing.v1";
 
 export default function BriefingCard() {
+  const { collapsed, toggle } = useCollapse("briefing");
   const [text, setText] = useState("");
   const [at, setAt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -59,12 +61,18 @@ export default function BriefingCard() {
   };
 
   return (
-    <section className="card tick-signal">
+    <section className="card band-orange">
       <div className="card-head">
-        <span className="material-icons-round" style={{ color: "var(--signal)" }}>auto_awesome</span>
+        <span className="material-icons-round">auto_awesome</span>
         <span className="card-title">AI 브리핑</span>
         {at && <span className="memo-saved" style={{ margin: 0 }}>{at} 생성</span>}
+              <button className="collapse-btn" onClick={toggle} aria-label={collapsed ? "펼치기" : "접기"}>
+          <span className="material-icons-round">{collapsed ? "expand_more" : "expand_less"}</span>
+        </button>
       </div>
+
+      {!collapsed && (
+      <div className="card-body">
 
       {text && <p className="briefing-text">{text}</p>}
       {!text && !loading && (
@@ -78,6 +86,8 @@ export default function BriefingCard() {
         </span>
         {loading ? "비서가 정리하는 중…" : text ? "브리핑 다시 생성" : "오늘 브리핑 생성"}
       </button>
+    </div>
+      )}
     </section>
   );
 }

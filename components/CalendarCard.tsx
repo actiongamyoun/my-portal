@@ -109,12 +109,14 @@ export default function CalendarCard() {
         }).format(new Date(e.start));
 
   return (
-    <section className="card">
+    <section className="card band-blue">
       <div className="card-head">
         <span className="material-icons-round">event</span>
         <span className="card-title">오늘 일정</span>
         {events && <span className="badge">{events.length}</span>}
       </div>
+
+      <div className="card-body">
 
       <div className="todo-input-row">
         <input
@@ -153,6 +155,7 @@ export default function CalendarCard() {
           </span>
         </a>
       ))}
+    </div>
     </section>
   );
 }
