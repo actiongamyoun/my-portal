@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import CalendarCard from "./CalendarCard";
 import BriefingCard from "./BriefingCard";
 import StocksCard from "./StocksCard";
+import RunsCard from "./RunsCard";
 import GmailCard from "./GmailCard";
 import TodoCard from "./TodoCard";
 import MemoCard from "./MemoCard";
@@ -90,6 +91,7 @@ export default function Dashboard() {
         </div>
         <div className="col">
           <GmailCard />
+          <RunsCard />
           <MemoCard />
         </div>
         <div className="col">

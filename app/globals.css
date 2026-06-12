@@ -331,3 +331,32 @@ input, textarea { font: inherit; color: inherit; }
 /* ── 정책 탭 ── */
 .policy-item { display: flex; gap: 9px; align-items: flex-start; }
 .policy-icon { font-size: 18px; margin-top: 2px; flex-shrink: 0; }
+
+/* ── 러닝 코치 ── */
+.band-rose .card-head { background: #fbe7ef; color: #a83a63; }
+.band-rose .card-head .material-icons-round { color: #c2477a; }
+.run-textarea {
+  width: 100%; min-height: 54px; resize: vertical;
+  border: 1px solid var(--line); border-radius: 9px;
+  padding: 8px 10px; font-size: 13px; background: var(--bg);
+}
+.run-textarea:focus { outline: 2px solid #c2477a; outline-offset: -1px; }
+.run-actions { display: flex; gap: 8px; margin-top: 8px; }
+.run-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 9px; border-radius: 9px;
+  background: var(--ink); color: #fff; font-weight: 600; font-size: 12.5px;
+}
+.run-btn.secondary { background: #c2477a; }
+.run-btn:disabled { opacity: 0.55; cursor: default; }
+.run-analysis {
+  background: var(--bg); border-radius: 10px;
+  padding: 10px 12px; font-size: 13px; line-height: 1.65;
+  margin: 12px 0 4px;
+}
+.run-row { display: flex; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.run-row:last-child { border-bottom: none; }
+.run-date { font-family: var(--mono); font-size: 11.5px; color: var(--muted); min-width: 44px; }
+.run-km { font-weight: 700; }
+.sub-hr { font-size: 11.5px; color: #c2477a; }
+.run-pace { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--muted); }

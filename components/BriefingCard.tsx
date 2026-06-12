@@ -24,10 +24,11 @@ export default function BriefingCard() {
     setErr("");
     try {
       // 이미 떠 있는 위젯들과 같은 데이터를 수집
-      const [cal, gm, nw] = await Promise.all([
+      const [cal, gm, nw, rn] = await Promise.all([
         fetch("/api/calendar").then((r) => (r.ok ? r.json() : { events: [] })).catch(() => ({ events: [] })),
         fetch("/api/gmail").then((r) => (r.ok ? r.json() : { messages: [] })).catch(() => ({ messages: [] })),
         fetch("/api/news/google").then((r) => (r.ok ? r.json() : { news: [] })).catch(() => ({ news: [] })),
+        fetch("/api/runs").then((r) => (r.ok ? r.json() : { runs: [] })).catch(() => ({ runs: [] })),
       ]);
       const r = await fetch("/api/briefing", {
         method: "POST",
@@ -36,6 +37,9 @@ export default function BriefingCard() {
           events: cal.events ?? [],
           mails: (gm.messages ?? []).map((m: Record<string, string>) => ({ from: m.from, subject: m.subject })),
           news: (nw.news ?? []).map((n: Record<string, string>) => n.title),
+          runs: (rn.runs ?? []).slice(0, 5).map((r: Record<string, unknown>) => ({
+            date: r.run_date, km: r.distance_km, pace: r.pace, hr: r.avg_hr,
+          })),
         }),
       });
       if (!r.ok) {
