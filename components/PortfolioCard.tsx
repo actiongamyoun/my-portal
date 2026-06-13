@@ -114,7 +114,23 @@ export default function PortfolioCard() {
           <p className="empty">토스증권 보유종목 화면을 캡처해서 올리면 시작됩니다.</p>
         )}
 
-        {holdings?.map((h) => (
+        {holdings && holdings.length > 0 && (["KR", "US"] as const).map((mk) => {
+          const group = holdings.filter((h) => (mk === "US" ? h.market === "US" : h.market !== "US"));
+          if (group.length === 0) return null;
+          const priced = group.filter((h) => h.value_krw != null && h.pl_pct != null && h.pl_pct > -100);
+          const gv = priced.reduce((a, h) => a + (h.value_krw ?? 0), 0);
+          const gCost = priced.reduce((a, h) => a + (h.value_krw ?? 0) / (1 + (h.pl_pct ?? 0) / 100), 0);
+          const gPct = gCost > 0 ? ((gv - gCost) / gCost) * 100 : 0;
+          return (
+            <div key={mk}>
+              <div className="pf-sec">
+                <span>{mk === "KR" ? "🇰🇷 국내" : "🇺🇸 해외"}</span>
+                <span className="pf-sec-sum">
+                  {won(gv)}원
+                  <em className={plClass(gPct)}> {gPct > 0 ? "+" : ""}{gPct.toFixed(2)}%</em>
+                </span>
+              </div>
+              {group.map((h) => (
           <div key={h.id} className="pf-row">
             <span className="pf-name">
               {h.name}
@@ -136,7 +152,10 @@ export default function PortfolioCard() {
               <button className="text-btn" onClick={() => fixCode(h)} style={{ fontSize: 11 }}>수정</button>
             )}
           </div>
-        ))}
+              ))}
+            </div>
+          );
+        })}
 
         <div className="run-actions" style={{ marginTop: 12 }}>
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => onFiles(e.target.files)} />
@@ -152,7 +171,7 @@ export default function PortfolioCard() {
           )}
         </div>
         {msg && <div className="cal-msg" style={{ margin: "8px 0 0" }}>{msg}</div>}
-        <div className="stock-note">캡처 동기화 시 보유 내역 전체가 교체됩니다 · 네이버 시세 기준</div>
+        <div className="stock-note">캡처 동기화 시 전체 교체 · 네이버 지연 시세·현재 환율 기준이라 토스 표시와 다소 다를 수 있음</div>
       </div>
       )}
     </section>

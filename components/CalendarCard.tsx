@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useCollapse } from "./useCollapse";
 
 type Ev = { id: string; title: string; start: string; allDay: boolean; location: string; link: string };
 
 export default function CalendarCard() {
+  const { collapsed, toggle } = useCollapse("calendar");
   const [events, setEvents] = useState<Ev[] | null>(null);
   const [err, setErr] = useState(false);
   const [text, setText] = useState("");
@@ -114,8 +116,12 @@ export default function CalendarCard() {
         <span className="material-icons-round">event</span>
         <span className="card-title">오늘 일정</span>
         {events && <span className="badge">{events.length}</span>}
+              <button className="collapse-btn" onClick={toggle} aria-label={collapsed ? "펼치기" : "접기"}>
+          <span className="material-icons-round">{collapsed ? "expand_more" : "expand_less"}</span>
+        </button>
       </div>
 
+      {!collapsed && (
       <div className="card-body">
 
       <div className="todo-input-row">
@@ -156,6 +162,7 @@ export default function CalendarCard() {
         </a>
       ))}
     </div>
+      )}
     </section>
   );
 }

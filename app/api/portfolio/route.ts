@@ -113,13 +113,16 @@ export async function POST(req: NextRequest) {
 
 형식:
 {"holdings":[
-  {"name":"삼성전자","code":"005930","market":"KR","quantity":10,"avg_price":71200,"currency":"KRW"},
-  {"name":"테슬라","code":"TSLA","market":"US","quantity":2.5,"avg_price":245.30,"currency":"USD"}
+  {"name":"삼성전자","code":"005930","market":"KR","quantity":10,"avg_price":71200,"currency":"KRW","screen_value":745000,"screen_pl_pct":4.63},
+  {"name":"테슬라","code":"TSLA","market":"US","quantity":2.5,"avg_price":245.30,"currency":"USD","screen_value":null,"screen_pl_pct":-2.1}
 ]}
 
 규칙:
 - 화면에 보이는 종목만. 추측으로 추가 금지.
-- quantity: 보유 수량 (소수점 가능). avg_price: 1주 평균 매입가 — 통화 단위 그대로 (미국주식이 달러 표시면 달러로).
+- quantity: 보유 수량 (소수점 가능).
+- avg_price: 반드시 "평균단가" 또는 "1주 평균금액" 라벨이 붙은 값만. 현재가·평가금액·매수금액과 절대 혼동 금지. 화면에 평단이 안 보이면 null.
+- screen_value: 화면에 표시된 해당 종목의 평가금액 숫자 (원화 표시 기준, 안 보이면 null).
+- screen_pl_pct: 화면에 표시된 수익률 % 숫자 (마이너스 포함, 안 보이면 null).
 - code: 한국 주식은 6자리 종목코드 — 확실히 아는 경우만, 모르면 null. 미국 주식은 티커.
 - market: 한국 상장이면 "KR", 미국이면 "US".`,
   });
@@ -134,9 +137,20 @@ export async function POST(req: NextRequest) {
     const d = await r.json();
     const raw = (d.content ?? []).filter((b: Record<string, any>) => b.type === "text").map((b: Record<string, any>) => b.text).join("");
     const p = JSON.parse(raw.replace(/```json|```/g, "").trim());
-    const list = (p.holdings ?? []).filter(
-      (h: Record<string, any>) => h.name && Number(h.quantity) > 0 && Number(h.avg_price) > 0
-    );
+    // 평단 교차검증: 화면의 평가금액·수익률로 역산한 평단과 비교, 어긋나면 역산값 채택 (원화 종목만)
+    const list = (p.holdings ?? [])
+      .map((h: Record<string, any>) => {
+        const qty = Number(h.quantity);
+        let avg = Number(h.avg_price) || 0;
+        const sv = Number(h.screen_value) || 0;
+        const sp = h.screen_pl_pct == null ? null : Number(h.screen_pl_pct);
+        if ((h.currency ?? "KRW") === "KRW" && qty > 0 && sv > 0 && sp != null && Number.isFinite(sp)) {
+          const derived = sv / (1 + sp / 100) / qty;
+          if (derived > 0 && (avg <= 0 || Math.abs(avg - derived) / derived > 0.15)) avg = derived;
+        }
+        return { ...h, avg_price: avg };
+      })
+      .filter((h: Record<string, any>) => h.name && Number(h.quantity) > 0 && Number(h.avg_price) > 0);
     if (list.length === 0) throw new Error("parse");
 
     // 전체 교체: 캡처가 보유 전체 스냅샷이므로

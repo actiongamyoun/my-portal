@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useCollapse } from "./useCollapse";
 
 type Quote = {
   input: string;
@@ -27,6 +28,7 @@ function fmt(n: number, krw: boolean) {
 }
 
 export default function StocksCard() {
+  const { collapsed, toggle } = useCollapse("stocks");
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [editing, setEditing] = useState(false);
@@ -104,8 +106,12 @@ export default function StocksCard() {
         <button className="text-btn" onClick={() => setEditing((v) => !v)}>
           {editing ? "완료" : "편집"}
         </button>
+              <button className="collapse-btn" onClick={toggle} aria-label={collapsed ? "펼치기" : "접기"}>
+          <span className="material-icons-round">{collapsed ? "expand_more" : "expand_less"}</span>
+        </button>
       </div>
 
+      {!collapsed && (
       <div className="card-body">
 
       {INDICES.map((i) => (
@@ -134,6 +140,7 @@ export default function StocksCard() {
       )}
       <div className="stock-note">야후 파이낸스 · 지연 시세</div>
     </div>
+      )}
     </section>
   );
 }

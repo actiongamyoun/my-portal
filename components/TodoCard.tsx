@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCollapse } from "./useCollapse";
 
 type Todo = { id: number; text: string; done: boolean };
 const KEY = "portal.todos.v1";
 
 export default function TodoCard() {
+  const { collapsed, toggle } = useCollapse("todo");
   const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -34,8 +36,12 @@ export default function TodoCard() {
         <span className="material-icons-round">check_circle</span>
         <span className="card-title">할일</span>
         <span className="badge">{remain} 남음</span>
+              <button className="collapse-btn" onClick={toggle} aria-label={collapsed ? "펼치기" : "접기"}>
+          <span className="material-icons-round">{collapsed ? "expand_more" : "expand_less"}</span>
+        </button>
       </div>
 
+      {!collapsed && (
       <div className="card-body">
       <div className="todo-input-row">
         <input
@@ -66,6 +72,7 @@ export default function TodoCard() {
         </div>
       ))}
     </div>
+      )}
     </section>
   );
 }

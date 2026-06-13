@@ -65,7 +65,7 @@ export default function BriefingCard() {
   };
 
   return (
-    <section className="card band-orange">
+    <section className="card band-orange card-glow">
       <div className="card-head">
         <span className="material-icons-round">auto_awesome</span>
         <span className="card-title">AI 브리핑</span>

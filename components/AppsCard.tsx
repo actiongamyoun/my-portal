@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCollapse } from "./useCollapse";
 
 type Health = Record<string, boolean>;
 
@@ -17,6 +18,7 @@ const SEED: App[] = [
 ];
 
 export default function AppsCard() {
+  const { collapsed, toggle } = useCollapse("apps");
   const [apps, setApps] = useState<App[]>([]);
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -65,8 +67,12 @@ export default function AppsCard() {
         <button className="text-btn" onClick={() => setEditing((v) => !v)}>
           {editing ? "완료" : "편집"}
         </button>
+              <button className="collapse-btn" onClick={toggle} aria-label={collapsed ? "펼치기" : "접기"}>
+          <span className="material-icons-round">{collapsed ? "expand_more" : "expand_less"}</span>
+        </button>
       </div>
 
+      {!collapsed && (
       <div className="card-body">
       <div className={`apps-grid${editing ? " editing" : ""}`}>
         {apps.map((a) => (
@@ -106,6 +112,7 @@ export default function AppsCard() {
         </div>
       )}
     </div>
+      )}
     </section>
   );
 }

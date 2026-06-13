@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useCollapse } from "./useCollapse";
 
 const KEY = "portal.memo.v1";
 
 export default function MemoCard() {
+  const { collapsed, toggle } = useCollapse("memo");
   const [memo, setMemo] = useState("");
   const [savedAt, setSavedAt] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,8 +33,12 @@ export default function MemoCard() {
       <div className="card-head">
         <span className="material-icons-round">edit_note</span>
         <span className="card-title">메모</span>
+              <button className="collapse-btn" onClick={toggle} aria-label={collapsed ? "펼치기" : "접기"}>
+          <span className="material-icons-round">{collapsed ? "expand_more" : "expand_less"}</span>
+        </button>
       </div>
 
+      {!collapsed && (
       <div className="card-body">
       <textarea
         className="memo-area"
@@ -43,6 +49,7 @@ export default function MemoCard() {
       />
       {savedAt && <div className="memo-saved">저장됨 {savedAt}</div>}
     </div>
+      )}
     </section>
   );
 }
