@@ -466,3 +466,43 @@ input, textarea { font: inherit; color: inherit; }
   transition: background 0.15s ease, color 0.15s ease;
 }
 .pf-toggle-btn.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(22,32,43,0.1); }
+
+/* ── 정책 요약 펼침 (카드) ── */
+.policy-summary {
+  display: block; font-size: 12.5px; color: #525a64; line-height: 1.65;
+  margin-top: 7px; padding: 9px 11px; background: var(--bg); border-radius: 8px;
+}
+.policy-link { display: inline-block; margin-top: 6px; color: var(--accent); font-weight: 600; font-size: 12px; }
+.policy-all {
+  display: block; text-align: center; padding: 10px; margin-top: 4px;
+  font-size: 12.5px; font-weight: 600; color: var(--accent);
+  border-top: 1px solid var(--line);
+}
+
+/* ── 정책 전용 페이지 ── */
+.pol-page { max-width: 760px; margin: 0 auto; padding: 20px 16px 60px; }
+.pol-top { margin-bottom: 12px; }
+.pol-back { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); }
+.pol-back:hover { color: var(--ink); }
+.pol-back .material-icons-round { font-size: 18px; }
+.pol-h { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.pol-sub { font-size: 12.5px; color: var(--muted); margin: 4px 0 16px; }
+.pol-search { display: flex; gap: 8px; margin-bottom: 12px; }
+.pol-search input { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 10px 13px; font-size: 14px; background: var(--card); }
+.pol-search input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.pol-search button { padding: 0 18px; border-radius: 10px; background: var(--ink); color: #fff; font-weight: 600; font-size: 13.5px; }
+.pol-cats { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.pol-cat { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--card); }
+.pol-cat .material-icons-round { font-size: 15px; }
+.pol-cat.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.pol-day { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.03em; margin: 18px 0 4px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.pol-item { display: flex; gap: 10px; align-items: flex-start; padding: 11px 4px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.pol-item:hover { background: var(--card); }
+.pol-ic { font-size: 19px; margin-top: 1px; flex-shrink: 0; }
+.pol-title { font-size: 14px; font-weight: 500; line-height: 1.5; }
+.pol-badge { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 5px; margin-left: 6px; vertical-align: 2px; font-weight: 600; }
+.pol-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.pol-summary { font-size: 13px; color: #525a64; line-height: 1.7; margin-top: 8px; padding: 10px 12px; background: var(--bg); border-radius: 9px; }
+.pol-loading, .pol-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 20px; }
+.pol-more { display: block; width: 100%; margin-top: 14px; padding: 11px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--accent); font-weight: 600; font-size: 13px; }
+.pol-more:hover { border-color: var(--accent); }

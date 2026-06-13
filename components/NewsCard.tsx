@@ -1,21 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { POLICY_CATEGORIES } from "./policyCategories";
 import { useCollapse } from "./useCollapse";
 
 type News = { title: string; link: string; source: string; pubDate: string };
-type Policy = { id: number; title: string; ministry: string | null; category: string | null; url: string; published_at: string | null };
+type Policy = { id: number; title: string; summary: string | null; ministry: string | null; category: string | null; url: string; published_at: string | null };
 
-const POLICY_CATEGORIES: Record<string, { icon: string; color: string }> = {
-  "경제·금융":     { icon: "account_balance",    color: "#166F5B" },
-  "부동산":        { icon: "apartment",          color: "#A0522D" },
-  "산업·과학기술": { icon: "science",            color: "#2D5BA8" },
-  "외교·안보":     { icon: "public",             color: "#6B4FA0" },
-  "에너지·환경":   { icon: "bolt",               color: "#3F7A33" },
-  "사회·복지":     { icon: "volunteer_activism", color: "#B23A5E" },
-  "행정·정치":     { icon: "gavel",              color: "#5A6470" },
-  "기타":          { icon: "category",           color: "#7A7568" },
-};
+
 
 export default function NewsCard() {
   const { collapsed, toggle } = useCollapse("news");
@@ -24,6 +17,7 @@ export default function NewsCard() {
   const [input, setInput] = useState("경제");
   const [news, setNews] = useState<News[] | null>(null);
   const [policies, setPolicies] = useState<Policy[] | null>(null);
+  const [openId, setOpenId] = useState<number | null>(null);
   const [err, setErr] = useState(false);
 
   useEffect(() => {
@@ -68,7 +62,7 @@ export default function NewsCard() {
       <div className="card-body">
       <div className="news-tabs">
         <button className={`news-tab${tab === "google" ? " active" : ""}`} onClick={() => setTab("google")}>
-          구글 헤드라인
+          뉴스 헤드라인
         </button>
         <button className={`news-tab${tab === "naver" ? " active" : ""}`} onClick={() => setTab("naver")}>
           네이버 검색
@@ -94,16 +88,26 @@ export default function NewsCard() {
       {tab === "policy" && policies?.length === 0 && <p className="empty">아직 수집된 정책이 없어요. 수집기가 첫 실행되면 채워집니다.</p>}
       {tab === "policy" && policies?.map((p) => {
         const c = POLICY_CATEGORIES[p.category ?? "기타"] ?? POLICY_CATEGORIES["기타"];
+        const open = openId === p.id;
         return (
-          <a key={p.id} className="news-item policy-item" href={p.url} target="_blank" rel="noopener noreferrer">
+          <div key={p.id} className="news-item policy-item" onClick={() => setOpenId(open ? null : p.id)} style={{ cursor: "pointer" }}>
             <span className="material-icons-round policy-icon" style={{ color: c.color }}>{c.icon}</span>
-            <span style={{ minWidth: 0 }}>
+            <span style={{ minWidth: 0, flex: 1 }}>
               <span className="news-title">{p.title}</span>
               <span className="news-meta" style={{ display: "block" }}>{p.ministry ?? "정부"} · {rel(p.published_at ?? "")}</span>
+              {open && (
+                <span className="policy-summary">
+                  {p.summary ? `${c.emoji} ${p.summary}` : "요약이 아직 없어요."}
+                  <a href={p.url} target="_blank" rel="noopener noreferrer" className="policy-link" onClick={(e) => e.stopPropagation()}>원문 보기 ↗</a>
+                </span>
+              )}
             </span>
-          </a>
+          </div>
         );
       })}
+      {tab === "policy" && policies && policies.length > 0 && (
+        <Link href="/policies" className="policy-all">정책 아카이브 전체 보기 →</Link>
+      )}
       {tab !== "policy" && news?.map((n, i) => (
         <a key={i} className="news-item" href={n.link} target="_blank" rel="noreferrer">
           <div className="news-title">{n.title}</div>
