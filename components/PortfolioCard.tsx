@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useCollapse } from "./useCollapse";
 
 type Holding = {
-  id: number; name: string; code: string | null; market: string; currency: string;
-  quantity: number; avg_price: number; cur_price: number | null;
-  pl: number | null; pl_pct: number | null; value_krw: number | null;
+  id: number; name: string; code: string | null; market: string;
+  quantity: number; cost_krw: number; value_krw: number | null; live: boolean;
+  pl: number | null; pl_pct: number | null;
 };
 type Totals = { value_krw: number; pl_krw: number; pl_pct: number };
 
@@ -20,6 +20,7 @@ export default function PortfolioCard() {
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const marketRef = useRef<"KR" | "US">("KR");
 
   const load = useCallback(() => {
     fetch("/api/portfolio")
@@ -28,6 +29,11 @@ export default function PortfolioCard() {
       .catch(() => { setHoldings([]); setTotals(null); });
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  const pick = (mk: "KR" | "US") => {
+    marketRef.current = mk;
+    fileRef.current?.click();
+  };
 
   const onFiles = async (list: FileList | null) => {
     const files = Array.from(list ?? []).slice(0, 3);
@@ -40,7 +46,7 @@ export default function PortfolioCard() {
       const images = await Promise.all(
         files.map((f) => new Promise<{ data: string; media_type: string }>((res, rej) => {
           const reader = new FileReader();
-          reader.onload = () => res({ data: String(reader.result).split(",")[1], media_type: f.type || "image/jpeg" });
+          reader.onload = () => res({ data: String(reader.result).split(",")[1], media_type: f.type || "image/png" });
           reader.onerror = rej;
           reader.readAsDataURL(f);
         }))
@@ -48,15 +54,15 @@ export default function PortfolioCard() {
       const r = await fetch("/api/portfolio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ images }),
+        body: JSON.stringify({ images, market: marketRef.current }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error ?? "fail");
-      setMsg(`✓ 보유종목 ${d.count}개로 갱신됨`);
+      setMsg(`✓ ${d.market === "US" ? "해외" : "국내"} ${d.count}종목으로 갱신됨`);
       load();
     } catch (e) {
       setMsg((e as Error).message === "parse"
-        ? "보유 내역을 읽지 못했어요. 종목·수량·평단이 보이는 화면으로!"
+        ? "보유 내역을 읽지 못했어요. 표의 종목명~원금 컬럼이 보이게 캡처해 주세요"
         : "동기화 실패 — 잠시 후 다시 시도해 주세요");
     } finally {
       setBusy(false);
@@ -65,7 +71,7 @@ export default function PortfolioCard() {
   };
 
   const fixCode = async (h: Holding) => {
-    const code = window.prompt(`"${h.name}" 종목코드/티커 입력 (한국: 6자리, 미국: 티커)`, h.code ?? "");
+    const code = window.prompt(`"${h.name}" 종목코드/티커 (한국: 6자리, 미국: 티커)`, h.code ?? "");
     if (code === null) return;
     await fetch("/api/portfolio", {
       method: "PATCH",
@@ -111,16 +117,16 @@ export default function PortfolioCard() {
 
         {!holdings && (<><div className="skeleton" /><div className="skeleton" style={{ width: "75%" }} /></>)}
         {holdings?.length === 0 && (
-          <p className="empty">토스증권 보유종목 화면을 캡처해서 올리면 시작됩니다.</p>
+          <p className="empty">토스증권 PC 보유종목 화면을 캡처해서 아래 버튼으로 올리면 시작됩니다.</p>
         )}
 
         {holdings && holdings.length > 0 && (["KR", "US"] as const).map((mk) => {
           const group = holdings.filter((h) => (mk === "US" ? h.market === "US" : h.market !== "US"));
           if (group.length === 0) return null;
-          const priced = group.filter((h) => h.value_krw != null && h.pl_pct != null && h.pl_pct > -100);
+          const priced = group.filter((h) => h.value_krw != null && h.cost_krw > 0);
           const gv = priced.reduce((a, h) => a + (h.value_krw ?? 0), 0);
-          const gCost = priced.reduce((a, h) => a + (h.value_krw ?? 0) / (1 + (h.pl_pct ?? 0) / 100), 0);
-          const gPct = gCost > 0 ? ((gv - gCost) / gCost) * 100 : 0;
+          const gc = priced.reduce((a, h) => a + h.cost_krw, 0);
+          const gPct = gc > 0 ? ((gv - gc) / gc) * 100 : 0;
           return (
             <div key={mk}>
               <div className="pf-sec">
@@ -131,27 +137,27 @@ export default function PortfolioCard() {
                 </span>
               </div>
               {group.map((h) => (
-          <div key={h.id} className="pf-row">
-            <span className="pf-name">
-              {h.name}
-              <span className="pf-qty"> {h.quantity}주{h.currency === "USD" ? " · $" : ""}</span>
-            </span>
-            {h.cur_price != null ? (
-              <>
-                <span className="pf-value">{h.value_krw != null ? `${won(h.value_krw)}원` : ""}</span>
-                <span className={`pf-pct ${plClass(h.pl_pct)}`}>
-                  {h.pl_pct != null ? `${h.pl_pct > 0 ? "▲" : h.pl_pct < 0 ? "▼" : ""} ${Math.abs(h.pl_pct).toFixed(2)}%` : ""}
-                </span>
-              </>
-            ) : (
-              <button className="text-btn" style={{ marginLeft: "auto", color: "var(--signal)" }} onClick={() => fixCode(h)}>
-                코드 입력 필요
-              </button>
-            )}
-            {editing && h.cur_price != null && (
-              <button className="text-btn" onClick={() => fixCode(h)} style={{ fontSize: 11 }}>수정</button>
-            )}
-          </div>
+                <div key={h.id} className="pf-row">
+                  <span className="pf-name">
+                    {h.name}
+                    <span className="pf-qty"> {h.quantity}주{!h.live && h.value_krw != null ? " · 캡처값" : ""}</span>
+                  </span>
+                  {h.value_krw != null ? (
+                    <>
+                      <span className="pf-value">{won(h.value_krw)}원</span>
+                      <span className={`pf-pct ${plClass(h.pl_pct)}`}>
+                        {h.pl_pct != null ? `${h.pl_pct > 0 ? "▲" : h.pl_pct < 0 ? "▼" : ""} ${Math.abs(h.pl_pct).toFixed(2)}%` : ""}
+                      </span>
+                    </>
+                  ) : (
+                    <button className="text-btn" style={{ marginLeft: "auto", color: "var(--signal)" }} onClick={() => fixCode(h)}>
+                      코드 입력 필요
+                    </button>
+                  )}
+                  {editing && (
+                    <button className="text-btn" onClick={() => fixCode(h)} style={{ fontSize: 11 }}>수정</button>
+                  )}
+                </div>
               ))}
             </div>
           );
@@ -159,9 +165,13 @@ export default function PortfolioCard() {
 
         <div className="run-actions" style={{ marginTop: 12 }}>
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => onFiles(e.target.files)} />
-          <button className="run-btn pf-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+          <button className="run-btn pf-btn" onClick={() => pick("KR")} disabled={busy}>
             <span className="material-icons-round" style={{ fontSize: 16 }}>{busy ? "hourglass_top" : "sync"}</span>
-            {busy ? "분석 중…" : "캡처로 동기화 (1~3장)"}
+            🇰🇷 국내 캡처
+          </button>
+          <button className="run-btn pf-btn" onClick={() => pick("US")} disabled={busy}>
+            <span className="material-icons-round" style={{ fontSize: 16 }}>{busy ? "hourglass_top" : "sync"}</span>
+            🇺🇸 해외 캡처
           </button>
           {holdings && holdings.length > 0 && (
             <button className="run-btn" style={{ flex: "0 0 auto", padding: "9px 12px", background: "var(--card)", color: "var(--muted)", border: "1px solid var(--line)" }}
@@ -171,7 +181,7 @@ export default function PortfolioCard() {
           )}
         </div>
         {msg && <div className="cal-msg" style={{ margin: "8px 0 0" }}>{msg}</div>}
-        <div className="stock-note">캡처 동기화 시 전체 교체 · 네이버 지연 시세·현재 환율 기준이라 토스 표시와 다소 다를 수 있음</div>
+        <div className="stock-note">올린 시장(국내/해외)만 교체 · 시세 미확인 종목은 캡처값 표시 · 네이버 지연 시세 기준</div>
       </div>
       )}
     </section>

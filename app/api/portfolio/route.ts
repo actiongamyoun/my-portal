@@ -13,10 +13,7 @@ function sb() {
   return { url: process.env.NEXT_PUBLIC_SUPABASE_URL, key: process.env.SUPABASE_SERVICE_ROLE_KEY };
 }
 const sbHeaders = (key: string) => ({ apikey: key, Authorization: `Bearer ${key}` });
-
-function num(v: unknown): number {
-  return parseFloat(String(v ?? "").replace(/,/g, "")) || 0;
-}
+const num = (v: unknown) => parseFloat(String(v ?? "").replace(/,/g, "")) || 0;
 
 async function jget(url: string): Promise<Record<string, any> | null> {
   try {
@@ -26,10 +23,10 @@ async function jget(url: string): Promise<Record<string, any> | null> {
   } catch { return null; }
 }
 
-// 네이버 증권 현재가 (시세 카드와 같은 소스)
+// 현재가: 국내 → 원화, 미국 → 달러
 async function curPrice(code: string | null, market: string): Promise<number | null> {
   if (!code) return null;
-  if (market === "KR" || /^\d{6}$/.test(code)) {
+  if (market !== "US" || /^\d{6}$/.test(code)) {
     const d = await jget(`https://m.stock.naver.com/api/stock/${code}/basic`);
     return d?.closePrice ? num(d.closePrice) : null;
   }
@@ -46,47 +43,55 @@ export async function GET() {
   const { url, key } = sb();
   if (!url || !key) return NextResponse.json({ error: "no-db" }, { status: 500 });
 
-  const r = await fetch(`${url}/rest/v1/holdings?select=*&order=id.asc`, {
+  const r = await fetch(`${url}/rest/v1/holdings?select=*&order=cost_krw.desc.nullslast`, {
     headers: sbHeaders(key), cache: "no-store",
   });
   if (!r.ok) return NextResponse.json({ error: "db" }, { status: 500 });
   const rows: Record<string, any>[] = await r.json();
 
-  // 환율 (USD 보유 시)
   let usdKrw = 0;
-  if (rows.some((h) => h.currency === "USD")) {
+  if (rows.some((h) => h.market === "US")) {
     const fx = await jget("https://api.frankfurter.dev/v1/latest?base=USD&symbols=KRW");
     usdKrw = fx?.rates?.KRW ?? 0;
   }
 
   const holdings = await Promise.all(
     rows.map(async (h) => {
+      const qty = Number(h.quantity);
+      const cost = Number(h.cost_krw) || Number(h.avg_price) * qty || 0;
       const price = await curPrice(h.code, h.market);
-      const qty = Number(h.quantity), avg = Number(h.avg_price);
-      const toKrw = h.currency === "USD" ? usdKrw : 1;
-      const value = price != null ? price * qty : null;
-      const cost = avg * qty;
+
+      let value_krw: number | null = null;
+      let live = false;
+      if (price != null) {
+        if (h.market === "US") {
+          if (usdKrw > 0) { value_krw = price * qty * usdKrw; live = true; }
+        } else {
+          value_krw = price * qty; live = true;
+        }
+      }
+      if (value_krw == null && Number(h.screen_value) > 0) {
+        value_krw = Number(h.screen_value); // 폴백: 캡처 시점 평가금
+      }
+
       return {
-        id: h.id, name: h.name, code: h.code, market: h.market, currency: h.currency,
-        quantity: qty, avg_price: avg, cur_price: price,
-        value, cost,
-        pl: value != null ? value - cost : null,
-        pl_pct: value != null && cost > 0 ? ((value - cost) / cost) * 100 : null,
-        value_krw: value != null ? value * toKrw : null,
-        cost_krw: cost * toKrw,
+        id: h.id, name: h.name, code: h.code, market: h.market,
+        quantity: qty, cost_krw: cost, value_krw, live,
+        pl: value_krw != null && cost > 0 ? value_krw - cost : null,
+        pl_pct: value_krw != null && cost > 0 ? ((value_krw - cost) / cost) * 100 : null,
       };
     })
   );
 
-  const priced = holdings.filter((h) => h.value_krw != null);
-  const totalValue = priced.reduce((a, h) => a + (h.value_krw ?? 0), 0);
-  const totalCost = priced.reduce((a, h) => a + h.cost_krw, 0);
+  const priced = holdings.filter((h) => h.value_krw != null && h.cost_krw > 0);
+  const tv = priced.reduce((a, h) => a + (h.value_krw ?? 0), 0);
+  const tc = priced.reduce((a, h) => a + h.cost_krw, 0);
   return NextResponse.json({
     holdings,
     totals: {
-      value_krw: Math.round(totalValue),
-      pl_krw: Math.round(totalValue - totalCost),
-      pl_pct: totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0,
+      value_krw: Math.round(tv),
+      pl_krw: Math.round(tv - tc),
+      pl_pct: tc > 0 ? ((tv - tc) / tc) * 100 : 0,
     },
     usdKrw: usdKrw ? Math.round(usdKrw) : null,
   });
@@ -100,77 +105,85 @@ export async function POST(req: NextRequest) {
   if (!AK || !url || !key) return NextResponse.json({ error: "no-key" }, { status: 500 });
 
   const body = await req.json();
+  const market: string = body.market === "US" ? "US" : body.market === "KR" ? "KR" : "";
   const images: { data: string; media_type: string }[] = (body.images ?? []).slice(0, 3);
-  if (images.length === 0) return NextResponse.json({ error: "empty" }, { status: 400 });
+  if (!market || images.length === 0) return NextResponse.json({ error: "empty" }, { status: 400 });
 
   const content: Record<string, any>[] = images.map((img) => ({
     type: "image",
-    source: { type: "base64", media_type: img.media_type || "image/jpeg", data: img.data },
+    source: { type: "base64", media_type: img.media_type || "image/png", data: img.data },
   }));
   content.push({
     type: "text",
-    text: `첨부된 증권 앱(토스증권 등) 보유종목 화면에서 보유 내역을 추출해 JSON만 출력하세요. 다른 텍스트·마크다운 금지.
+    text: `첨부는 토스증권 ${market === "KR" ? "국내" : "해외"}주식 보유 화면입니다 (PC 표 또는 모바일 목록). 보유 내역을 추출해 JSON만 출력하세요. 다른 텍스트·마크다운 금지.
 
 형식:
 {"holdings":[
-  {"name":"삼성전자","code":"005930","market":"KR","quantity":10,"avg_price":71200,"currency":"KRW","screen_value":745000,"screen_pl_pct":4.63},
-  {"name":"테슬라","code":"TSLA","market":"US","quantity":2.5,"avg_price":245.30,"currency":"USD","screen_value":null,"screen_pl_pct":-2.1}
+  {"name":"종목명","code":"코드","quantity":98,"avg_price":46980,"value":3701864,"cost":4604045,"pl_amount":-902181,"pl_pct":-19.59}
 ]}
 
-규칙:
-- 화면에 보이는 종목만. 추측으로 추가 금지.
-- quantity: 보유 수량 (소수점 가능).
-- avg_price: 반드시 "평균단가" 또는 "1주 평균금액" 라벨이 붙은 값만. 현재가·평가금액·매수금액과 절대 혼동 금지. 화면에 평단이 안 보이면 null.
-- screen_value: 화면에 표시된 해당 종목의 평가금액 숫자 (원화 표시 기준, 안 보이면 null).
-- screen_pl_pct: 화면에 표시된 수익률 % 숫자 (마이너스 포함, 안 보이면 null).
-- code: 한국 주식은 6자리 종목코드 — 확실히 아는 경우만, 모르면 null. 미국 주식은 티커.
-- market: 한국 상장이면 "KR", 미국이면 "US".`,
+규칙 (모든 금액은 화면 표시 그대로 원화 숫자):
+- PC 표 기준 컬럼 매핑: avg_price="1주 평균금액", quantity="보유 수량", value="평가금", cost="원금", pl_amount="총 수익금", pl_pct="총 수익률" (부호 포함).
+- 모바일 화면이라 평단·원금이 없으면: avg_price/cost는 null, value=평가금액, pl_amount=손익금액(마이너스면 음수), pl_pct의 부호는 pl_amount와 같게.
+- 화면에 보이는 종목만, 여러 장에 중복되면 한 번만.
+- code: ${market === "KR" ? "한국 6자리 종목코드 — 확실히 아는 종목만, 모르면 null" : "미국 티커(예: RBLX, IONQ) — 종목명에서 확실히 알 수 있는 것만, 모르면 null"}.`,
   });
 
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": AK, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 1500, messages: [{ role: "user", content }] }),
+      body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 2500, messages: [{ role: "user", content }] }),
     });
     if (!r.ok) throw new Error("anthropic");
     const d = await r.json();
     const raw = (d.content ?? []).filter((b: Record<string, any>) => b.type === "text").map((b: Record<string, any>) => b.text).join("");
     const p = JSON.parse(raw.replace(/```json|```/g, "").trim());
-    // 평단 교차검증: 화면의 평가금액·수익률로 역산한 평단과 비교, 어긋나면 역산값 채택 (원화 종목만)
-    const list = (p.holdings ?? [])
-      .map((h: Record<string, any>) => {
-        const qty = Number(h.quantity);
-        let avg = Number(h.avg_price) || 0;
-        const sv = Number(h.screen_value) || 0;
-        const sp = h.screen_pl_pct == null ? null : Number(h.screen_pl_pct);
-        if ((h.currency ?? "KRW") === "KRW" && qty > 0 && sv > 0 && sp != null && Number.isFinite(sp)) {
-          const derived = sv / (1 + sp / 100) / qty;
-          if (derived > 0 && (avg <= 0 || Math.abs(avg - derived) / derived > 0.15)) avg = derived;
-        }
-        return { ...h, avg_price: avg };
-      })
-      .filter((h: Record<string, any>) => h.name && Number(h.quantity) > 0 && Number(h.avg_price) > 0);
-    if (list.length === 0) throw new Error("parse");
 
-    // 전체 교체: 캡처가 보유 전체 스냅샷이므로
-    await fetch(`${url}/rest/v1/holdings?id=gt.0`, { method: "DELETE", headers: sbHeaders(key) });
+    const seen = new Set<string>();
+    const rows = (p.holdings ?? [])
+      .map((h: Record<string, any>) => {
+        const qty = Number(h.quantity) || 0;
+        const value = num(h.value);
+        let cost = num(h.cost);
+        const plAmt = h.pl_amount == null ? null : num(h.pl_amount);
+        const plPct = h.pl_pct == null ? null : Number(h.pl_pct);
+        let avg = num(h.avg_price);
+
+        // 원금 보정: 없으면 평가금-손익, 그것도 없으면 수익률로 역산
+        if (cost <= 0 && value > 0 && plAmt != null) cost = value - plAmt;
+        if (cost <= 0 && value > 0 && plPct != null && plPct > -100) cost = value / (1 + plPct / 100);
+        // 평단 교차검증: 원금과 10% 이상 어긋나면 원금 기준 재계산
+        if (qty > 0 && cost > 0 && (avg <= 0 || Math.abs(avg * qty - cost) / cost > 0.1)) avg = cost / qty;
+
+        return {
+          name: String(h.name ?? "").slice(0, 60),
+          code: h.code ? String(h.code).toUpperCase() : null,
+          market,
+          quantity: qty,
+          avg_price: avg > 0 ? avg : null,
+          cost_krw: cost > 0 ? Math.round(cost) : null,
+          screen_value: value > 0 ? Math.round(value) : null,
+          currency: "KRW",
+        };
+      })
+      .filter((h: Record<string, any>) => {
+        if (!h.name || h.quantity <= 0 || (!h.cost_krw && !h.screen_value)) return false;
+        if (seen.has(h.name)) return false;
+        seen.add(h.name);
+        return true;
+      });
+    if (rows.length === 0) throw new Error("parse");
+
+    // 해당 시장만 교체
+    await fetch(`${url}/rest/v1/holdings?market=eq.${market}`, { method: "DELETE", headers: sbHeaders(key) });
     const ins = await fetch(`${url}/rest/v1/holdings`, {
       method: "POST",
       headers: { ...sbHeaders(key), "Content-Type": "application/json" },
-      body: JSON.stringify(
-        list.map((h: Record<string, any>) => ({
-          name: String(h.name).slice(0, 60),
-          code: h.code ? String(h.code).toUpperCase() : null,
-          market: h.market === "US" ? "US" : "KR",
-          quantity: Number(h.quantity),
-          avg_price: Number(h.avg_price),
-          currency: h.currency === "USD" ? "USD" : "KRW",
-        }))
-      ),
+      body: JSON.stringify(rows),
     });
     if (!ins.ok) throw new Error("db");
-    return NextResponse.json({ count: list.length });
+    return NextResponse.json({ count: rows.length, market });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message === "parse" ? "parse" : "fetch" }, { status: 500 });
   }
