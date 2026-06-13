@@ -453,3 +453,16 @@ input, textarea { font: inherit; color: inherit; }
 .pf-count { font-weight: 400; }
 .pf-hidden { opacity: 0.45; }
 .pf-hidden .pf-name { text-decoration: line-through; }
+
+/* ── 포트폴리오 세그먼트 토글 ── */
+.pf-toggle {
+  display: flex; gap: 3px; padding: 3px;
+  background: var(--bg); border: 1px solid var(--line);
+  border-radius: 10px; margin-bottom: 10px;
+}
+.pf-toggle-btn {
+  flex: 1; padding: 7px 0; border-radius: 8px;
+  font-size: 13px; font-weight: 600; color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.pf-toggle-btn.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(22,32,43,0.1); }

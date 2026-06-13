@@ -19,17 +19,16 @@ export default function PortfolioCard() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState(false);
-  const [openSec, setOpenSec] = useState<Record<string, boolean>>({});
+  const [view, setView] = useState<"KR" | "US">("KR");
 
   useEffect(() => {
-    try { setOpenSec(JSON.parse(localStorage.getItem("portal.pf.sections") ?? "{}")); } catch {}
+    const v = localStorage.getItem("portal.pf.view");
+    if (v === "KR" || v === "US") setView(v);
   }, []);
-  const toggleSec = (mk: string) =>
-    setOpenSec((prev) => {
-      const next = { ...prev, [mk]: !prev[mk] };
-      try { localStorage.setItem("portal.pf.sections", JSON.stringify(next)); } catch {}
-      return next;
-    });
+  const switchView = (v: "KR" | "US") => {
+    setView(v);
+    try { localStorage.setItem("portal.pf.view", v); } catch {}
+  };
   const fileRef = useRef<HTMLInputElement>(null);
   const marketRef = useRef<"KR" | "US">("KR");
 
@@ -140,9 +139,8 @@ export default function PortfolioCard() {
           <p className="empty">토스증권 PC 보유종목 화면을 캡처해서 아래 버튼으로 올리면 시작됩니다.</p>
         )}
 
-        {holdings && holdings.length > 0 && (["KR", "US"] as const).map((mk) => {
-          const all = holdings.filter((h) => (mk === "US" ? h.market === "US" : h.market !== "US"));
-          if (all.length === 0) return null;
+        {holdings && holdings.length > 0 && (() => {
+          const all = holdings.filter((h) => (view === "US" ? h.market === "US" : h.market !== "US"));
           const visible = all.filter((h) => !h.hidden);
           const hiddenCount = all.length - visible.length;
           const group = editing ? all : visible;
@@ -150,24 +148,20 @@ export default function PortfolioCard() {
           const gv = priced.reduce((a, h) => a + (h.value_krw ?? 0), 0);
           const gc = priced.reduce((a, h) => a + h.cost_krw, 0);
           const gPct = gc > 0 ? ((gv - gc) / gc) * 100 : 0;
-          const open = !!openSec[mk];
           return (
-            <div key={mk}>
-              <button className="pf-sec pf-sec-toggle" onClick={() => toggleSec(mk)}
-                aria-expanded={open} aria-label={`${mk === "KR" ? "국내" : "해외"} 종목 ${open ? "접기" : "펼치기"}`}>
-                <span>
-                  <span className="material-icons-round" style={{ fontSize: 16, verticalAlign: "-3px" }}>
-                    {open ? "expand_more" : "chevron_right"}
-                  </span>
-                  {mk === "KR" ? "🇰🇷 국내" : "🇺🇸 해외"}
-                  <span className="pf-count">{visible.length}종목{hiddenCount > 0 ? ` · 숨김 ${hiddenCount}` : ""}</span>
-                </span>
-                <span className="pf-sec-sum">
-                  {won(gv)}원
-                  <em className={plClass(gPct)}> {gPct > 0 ? "+" : ""}{gPct.toFixed(2)}%</em>
-                </span>
-              </button>
-              {open && group.map((h) => (
+            <>
+              <div className="pf-toggle" role="tablist">
+                <button className={`pf-toggle-btn${view === "KR" ? " on" : ""}`} role="tab" aria-selected={view === "KR"} onClick={() => switchView("KR")}>🇰🇷 국내</button>
+                <button className={`pf-toggle-btn${view === "US" ? " on" : ""}`} role="tab" aria-selected={view === "US"} onClick={() => switchView("US")}>🇺🇸 해외</button>
+              </div>
+
+              <div className="pf-sec" style={{ cursor: "default" }}>
+                <span className="pf-count">{visible.length}종목{hiddenCount > 0 ? ` · 숨김 ${hiddenCount}` : ""}</span>
+                <span className="pf-sec-sum">{won(gv)}원<em className={plClass(gPct)}> {gPct > 0 ? "+" : ""}{gPct.toFixed(2)}%</em></span>
+              </div>
+
+              {group.length === 0 && <p className="empty">{view === "KR" ? "국내" : "해외"} 보유 종목이 없어요.</p>}
+              {group.map((h) => (
                 <div key={h.id} className={`pf-row${h.hidden ? " pf-hidden" : ""}`}>
                   <span className="pf-name">
                     {h.name}
@@ -195,9 +189,9 @@ export default function PortfolioCard() {
                   )}
                 </div>
               ))}
-            </div>
+            </>
           );
-        })}
+        })()}
 
         <div className="run-actions" style={{ marginTop: 12 }}>
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => onFiles(e.target.files)} />
