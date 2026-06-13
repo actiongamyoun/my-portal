@@ -75,7 +75,7 @@ export async function GET() {
       }
 
       return {
-        id: h.id, name: h.name, code: h.code, market: h.market,
+        id: h.id, name: h.name, code: h.code, market: h.market, hidden: !!h.hidden,
         quantity: qty, cost_krw: cost, value_krw, live,
         pl: value_krw != null && cost > 0 ? value_krw - cost : null,
         pl_pct: value_krw != null && cost > 0 ? ((value_krw - cost) / cost) * 100 : null,
@@ -83,7 +83,7 @@ export async function GET() {
     })
   );
 
-  const priced = holdings.filter((h) => h.value_krw != null && h.cost_krw > 0);
+  const priced = holdings.filter((h) => !h.hidden && h.value_krw != null && h.cost_krw > 0);
   const tv = priced.reduce((a, h) => a + (h.value_krw ?? 0), 0);
   const tc = priced.reduce((a, h) => a + h.cost_krw, 0);
   return NextResponse.json({
@@ -175,6 +175,14 @@ export async function POST(req: NextRequest) {
       });
     if (rows.length === 0) throw new Error("parse");
 
+    // 기존 숨김 상태를 종목명 기준으로 이어받기
+    const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+    const hidRes = await fetch(`${url}/rest/v1/holdings?select=name&market=eq.${market}&hidden=eq.true`, {
+      headers: sbHeaders(key), cache: "no-store",
+    });
+    const hiddenNames = new Set((((await hidRes.json().catch(() => [])) ?? []) as { name: string }[]).map((x) => norm(x.name)));
+    for (const row of rows) (row as Record<string, any>).hidden = hiddenNames.has(norm(row.name));
+
     // 해당 시장만 교체
     await fetch(`${url}/rest/v1/holdings?market=eq.${market}`, { method: "DELETE", headers: sbHeaders(key) });
     const ins = await fetch(`${url}/rest/v1/holdings`, {
@@ -195,12 +203,16 @@ export async function PATCH(req: NextRequest) {
   const { url, key } = sb();
   if (!url || !key) return NextResponse.json({ error: "no-db" }, { status: 500 });
 
-  const { id, code } = await req.json();
+  const { id, code, hidden } = await req.json();
   if (!id) return NextResponse.json({ error: "empty" }, { status: 400 });
+  const patch: Record<string, unknown> = {};
+  if (code !== undefined) patch.code = code ? String(code).toUpperCase() : null;
+  if (hidden !== undefined) patch.hidden = !!hidden;
+  if (Object.keys(patch).length === 0) return NextResponse.json({ error: "empty" }, { status: 400 });
   const r = await fetch(`${url}/rest/v1/holdings?id=eq.${Number(id)}`, {
     method: "PATCH",
     headers: { ...sbHeaders(key), "Content-Type": "application/json" },
-    body: JSON.stringify({ code: code ? String(code).toUpperCase() : null }),
+    body: JSON.stringify(patch),
   });
   if (!r.ok) return NextResponse.json({ error: "db" }, { status: 500 });
   return NextResponse.json({ ok: true });

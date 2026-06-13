@@ -433,3 +433,23 @@ input, textarea { font: inherit; color: inherit; }
 .pf-sec-sum em.up { color: #d92d4c; }
 .pf-sec-sum em.down { color: #1f6fe0; }
 .pf-sec-sum em.flat { color: var(--muted); }
+
+/* ── 포트폴리오 섹션 토글 ── */
+.pf-sec-toggle {
+  width: 100%; text-align: left; cursor: pointer;
+  padding: 8px 8px; margin: 8px 0 2px;
+  border-radius: 8px; background: var(--bg);
+}
+.pf-sec-toggle:hover { background: #e9edf2; }
+.pf-count {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 400;
+  margin-left: 6px; color: var(--muted);
+}
+
+/* ── 포트폴리오 섹션 토글·숨김 ── */
+.pf-sec-btn { width: 100%; gap: 4px; cursor: pointer; padding: 6px 0; }
+.pf-sec-btn:hover { color: var(--ink); }
+.pf-sec-arrow { font-size: 16px !important; }
+.pf-count { font-weight: 400; }
+.pf-hidden { opacity: 0.45; }
+.pf-hidden .pf-name { text-decoration: line-through; }

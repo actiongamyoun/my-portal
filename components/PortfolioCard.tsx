@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useCollapse } from "./useCollapse";
 
 type Holding = {
-  id: number; name: string; code: string | null; market: string;
+  id: number; name: string; code: string | null; market: string; hidden: boolean;
   quantity: number; cost_krw: number; value_krw: number | null; live: boolean;
   pl: number | null; pl_pct: number | null;
 };
@@ -19,6 +19,17 @@ export default function PortfolioCard() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState(false);
+  const [openSec, setOpenSec] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    try { setOpenSec(JSON.parse(localStorage.getItem("portal.pf.sections") ?? "{}")); } catch {}
+  }, []);
+  const toggleSec = (mk: string) =>
+    setOpenSec((prev) => {
+      const next = { ...prev, [mk]: !prev[mk] };
+      try { localStorage.setItem("portal.pf.sections", JSON.stringify(next)); } catch {}
+      return next;
+    });
   const fileRef = useRef<HTMLInputElement>(null);
   const marketRef = useRef<"KR" | "US">("KR");
 
@@ -29,6 +40,15 @@ export default function PortfolioCard() {
       .catch(() => { setHoldings([]); setTotals(null); });
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  const setHidden = async (h: Holding, hidden: boolean) => {
+    await fetch("/api/portfolio", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: h.id, hidden }),
+    }).catch(() => {});
+    load();
+  };
 
   const pick = (mk: "KR" | "US") => {
     marketRef.current = mk;
@@ -121,23 +141,34 @@ export default function PortfolioCard() {
         )}
 
         {holdings && holdings.length > 0 && (["KR", "US"] as const).map((mk) => {
-          const group = holdings.filter((h) => (mk === "US" ? h.market === "US" : h.market !== "US"));
-          if (group.length === 0) return null;
-          const priced = group.filter((h) => h.value_krw != null && h.cost_krw > 0);
+          const all = holdings.filter((h) => (mk === "US" ? h.market === "US" : h.market !== "US"));
+          if (all.length === 0) return null;
+          const visible = all.filter((h) => !h.hidden);
+          const hiddenCount = all.length - visible.length;
+          const group = editing ? all : visible;
+          const priced = visible.filter((h) => h.value_krw != null && h.cost_krw > 0);
           const gv = priced.reduce((a, h) => a + (h.value_krw ?? 0), 0);
           const gc = priced.reduce((a, h) => a + h.cost_krw, 0);
           const gPct = gc > 0 ? ((gv - gc) / gc) * 100 : 0;
+          const open = !!openSec[mk];
           return (
             <div key={mk}>
-              <div className="pf-sec">
-                <span>{mk === "KR" ? "🇰🇷 국내" : "🇺🇸 해외"}</span>
+              <button className="pf-sec pf-sec-toggle" onClick={() => toggleSec(mk)}
+                aria-expanded={open} aria-label={`${mk === "KR" ? "국내" : "해외"} 종목 ${open ? "접기" : "펼치기"}`}>
+                <span>
+                  <span className="material-icons-round" style={{ fontSize: 16, verticalAlign: "-3px" }}>
+                    {open ? "expand_more" : "chevron_right"}
+                  </span>
+                  {mk === "KR" ? "🇰🇷 국내" : "🇺🇸 해외"}
+                  <span className="pf-count">{visible.length}종목{hiddenCount > 0 ? ` · 숨김 ${hiddenCount}` : ""}</span>
+                </span>
                 <span className="pf-sec-sum">
                   {won(gv)}원
                   <em className={plClass(gPct)}> {gPct > 0 ? "+" : ""}{gPct.toFixed(2)}%</em>
                 </span>
-              </div>
-              {group.map((h) => (
-                <div key={h.id} className="pf-row">
+              </button>
+              {open && group.map((h) => (
+                <div key={h.id} className={`pf-row${h.hidden ? " pf-hidden" : ""}`}>
                   <span className="pf-name">
                     {h.name}
                     <span className="pf-qty"> {h.quantity}주{!h.live && h.value_krw != null ? " · 캡처값" : ""}</span>
@@ -155,7 +186,12 @@ export default function PortfolioCard() {
                     </button>
                   )}
                   {editing && (
-                    <button className="text-btn" onClick={() => fixCode(h)} style={{ fontSize: 11 }}>수정</button>
+                    <>
+                      <button className="text-btn" onClick={() => setHidden(h, !h.hidden)} aria-label={h.hidden ? "표시" : "숨김"} style={{ display: "inline-flex" }}>
+                        <span className="material-icons-round" style={{ fontSize: 16 }}>{h.hidden ? "visibility" : "visibility_off"}</span>
+                      </button>
+                      <button className="text-btn" onClick={() => fixCode(h)} style={{ fontSize: 11 }}>코드</button>
+                    </>
                   )}
                 </div>
               ))}
