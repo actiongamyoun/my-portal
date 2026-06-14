@@ -11,6 +11,7 @@ import TodoCard from "./TodoCard";
 import MemoCard from "./MemoCard";
 import NewsCard from "./NewsCard";
 import AppsCard from "./AppsCard";
+import AiToolsCard from "./AiToolsCard";
 
 type Weather = { temp: number; desc: string; city: string; humidity: number };
 type Fx = { usdKrw: number; jpy100Krw: number };
@@ -100,6 +101,7 @@ export default function Dashboard() {
           <PortfolioCard />
           <NewsCard />
           <AppsCard />
+          <AiToolsCard />
         </div>
       </div>
     </>
