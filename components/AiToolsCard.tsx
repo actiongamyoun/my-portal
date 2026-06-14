@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useCollapse } from "./useCollapse";
+import { useSyncedState } from "./useSyncedState";
 
 type Tool = { id: number; name: string; url: string; color: string; short: string };
-const KEY = "portal.aitools.v1";
-
 // 프리셋: 브랜드 컬러 + 약자(아이콘 폰트 없이 텍스트 배지)
 const PRESETS: { name: string; url: string; color: string; short: string }[] = [
   { name: "Claude",     url: "https://claude.ai",                  color: "#d97757", short: "Cl" },
@@ -18,26 +17,10 @@ const PRESETS: { name: string; url: string; color: string; short: string }[] = [
 
 export default function AiToolsCard() {
   const { collapsed, toggle } = useCollapse("aitools");
-  const [tools, setTools] = useState<Tool[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [tools, setTools] = useSyncedState<Tool[]>("aitools", PRESETS.slice(0, 3).map((p, i) => ({ id: i + 1, ...p })));
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(KEY);
-      // 첫 방문: Claude/ChatGPT/Gemini 기본 세팅
-      setTools(saved ? JSON.parse(saved) : PRESETS.slice(0, 3).map((p, i) => ({ id: i + 1, ...p })));
-    } catch {
-      setTools(PRESETS.slice(0, 3).map((p, i) => ({ id: i + 1, ...p })));
-    }
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (loaded) localStorage.setItem(KEY, JSON.stringify(tools));
-  }, [tools, loaded]);
 
   const has = (u: string) => tools.some((t) => t.url.replace(/\/$/, "") === u.replace(/\/$/, ""));
 

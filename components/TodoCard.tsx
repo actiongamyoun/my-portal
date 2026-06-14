@@ -1,25 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useCollapse } from "./useCollapse";
+import { useSyncedState } from "./useSyncedState";
 
 type Todo = { id: number; text: string; done: boolean };
-const KEY = "portal.todos.v1";
 
 export default function TodoCard() {
   const { collapsed, toggle } = useCollapse("todo");
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const [todos, setTodos] = useSyncedState<Todo[]>("todos", []);
   const [text, setText] = useState("");
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    try { setTodos(JSON.parse(localStorage.getItem(KEY) ?? "[]")); } catch {}
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (loaded) localStorage.setItem(KEY, JSON.stringify(todos));
-  }, [todos, loaded]);
 
   const add = () => {
     const t = text.trim();

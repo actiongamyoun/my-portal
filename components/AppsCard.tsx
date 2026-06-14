@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useCollapse } from "./useCollapse";
+import { useSyncedState } from "./useSyncedState";
 
 type Health = Record<string, boolean>;
 
 type App = { id: number; name: string; url: string; icon: string };
-const KEY = "portal.apps.v1";
 
 const SEED: App[] = [
   { id: 1, name: "MATHLAND 5", url: "https://mathland5.vercel.app", icon: "calculate" },
@@ -19,27 +19,12 @@ const SEED: App[] = [
 
 export default function AppsCard() {
   const { collapsed, toggle } = useCollapse("apps");
-  const [apps, setApps] = useState<App[]>([]);
+  const [apps, setApps, loaded] = useSyncedState<App[]>("apps", SEED);
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
-  const [loaded, setLoaded] = useState(false);
   const [health, setHealth] = useState<Health>({});
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(KEY);
-      setApps(saved ? JSON.parse(saved) : SEED);
-    } catch {
-      setApps(SEED);
-    }
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (loaded) localStorage.setItem(KEY, JSON.stringify(apps));
-  }, [apps, loaded]);
 
   useEffect(() => {
     if (!loaded || apps.length === 0) return;

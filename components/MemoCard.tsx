@@ -1,31 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useCollapse } from "./useCollapse";
-
-const KEY = "portal.memo.v1";
+import { useSyncedState } from "./useSyncedState";
 
 export default function MemoCard() {
   const { collapsed, toggle } = useCollapse("memo");
-  const [memo, setMemo] = useState("");
+  const [memo, setMemo] = useSyncedState<string>("memo", "");
   const [savedAt, setSavedAt] = useState("");
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    setMemo(localStorage.getItem(KEY) ?? "");
-  }, []);
 
   const onChange = (v: string) => {
     setMemo(v);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      localStorage.setItem(KEY, v);
-      setSavedAt(
-        new Intl.DateTimeFormat("ko-KR", {
-          timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
-        }).format(new Date())
-      );
-    }, 500);
+    setSavedAt(
+      new Intl.DateTimeFormat("ko-KR", {
+        timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+      }).format(new Date())
+    );
   };
 
   return (
