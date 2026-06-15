@@ -22,6 +22,7 @@ const fmtPace = (sec: number) => `${Math.floor(sec / 60)}'${String(Math.round(se
 
 export default function RunsCard() {
   const { collapsed, toggle } = useCollapse("runs");
+  const [trend, setTrend] = useState<"week" | "month">("week");
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -82,29 +83,46 @@ export default function RunsCard() {
     submit({ images, text: text.trim() || undefined });
   };
 
-  // 이번 달 누적
+  // 이번 주(일~토) / 이번 달 누적
   const now = new Date();
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const monthKm = (runs ?? []).filter((r) => r.run_date?.startsWith(ym))
     .reduce((a, r) => a + (Number(r.distance_km) || 0), 0);
+  const weekStart = (() => { const x = new Date(now); x.setDate(x.getDate() - x.getDay()); x.setHours(0, 0, 0, 0); return x; })();
+  const weekKm = (runs ?? []).filter((r) => {
+    const d = new Date(r.run_date + "T00:00:00");
+    return d >= weekStart;
+  }).reduce((a, r) => a + (Number(r.distance_km) || 0), 0);
   const latest = runs?.[0];
 
-  // 주간 거리 추세 (최근 6주, 월요일 시작)
-  const weeks: { label: string; km: number }[] = [];
+  // 거리 추세 — 주간(최근 6주, 일~토) / 월간(최근 6개월) 토글
+  const bars: { label: string; km: number }[] = [];
   if (runs) {
-    const monday = (d: Date) => { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); x.setHours(0,0,0,0); return x; };
-    const thisMon = monday(new Date());
-    for (let i = 5; i >= 0; i--) {
-      const start = new Date(thisMon); start.setDate(start.getDate() - i * 7);
-      const end = new Date(start); end.setDate(end.getDate() + 7);
-      const km = runs.filter((r) => {
+    const sumRange = (start: Date, end: Date) =>
+      runs.filter((r) => {
         const d = new Date(r.run_date + "T00:00:00");
         return d >= start && d < end;
       }).reduce((a, r) => a + (Number(r.distance_km) || 0), 0);
-      weeks.push({ label: `${start.getMonth() + 1}/${start.getDate()}`, km });
+
+    if (trend === "week") {
+      // 이번 주 일요일 시작
+      const sunday = (d: Date) => { const x = new Date(d); x.setDate(x.getDate() - x.getDay()); x.setHours(0, 0, 0, 0); return x; };
+      const thisSun = sunday(new Date());
+      for (let i = 5; i >= 0; i--) {
+        const start = new Date(thisSun); start.setDate(start.getDate() - i * 7);
+        const end = new Date(start); end.setDate(end.getDate() + 7);
+        bars.push({ label: `${start.getMonth() + 1}/${start.getDate()}`, km: sumRange(start, end) });
+      }
+    } else {
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+        bars.push({ label: `${start.getMonth() + 1}월`, km: sumRange(start, end) });
+      }
     }
   }
-  const maxWeek = Math.max(...weeks.map((w) => w.km), 1);
+  const maxBar = Math.max(...bars.map((w) => w.km), 1);
 
   // 스플릿 차트 데이터
   const splits = latest?.splits ?? [];
@@ -118,7 +136,7 @@ export default function RunsCard() {
       <div className="card-head">
         <span className="material-icons-round">directions_run</span>
         <span className="card-title">러닝 코치</span>
-        {runs && <span className="badge">이번 달 {monthKm.toFixed(1)}km</span>}
+        {runs && <span className="badge">{trend === "week" ? "이번 주" : "이번 달"} {(trend === "week" ? weekKm : monthKm).toFixed(1)}km</span>}
         <button className="collapse-btn" onClick={toggle} aria-label={collapsed ? "펼치기" : "접기"}>
           <span className="material-icons-round">{collapsed ? "expand_more" : "expand_less"}</span>
         </button>
@@ -196,14 +214,20 @@ export default function RunsCard() {
           </div>
         )}
 
-        {weeks.some((w) => w.km > 0) && (
+        {runs && runs.length > 0 && (
           <div className="chart-block">
-            <div className="chart-title">주간 거리 추세 (6주)</div>
+            <div className="chart-head">
+              <div className="chart-title">거리 추세</div>
+              <div className="trend-toggle">
+                <button className={`trend-btn${trend === "week" ? " on" : ""}`} onClick={() => setTrend("week")}>주간</button>
+                <button className={`trend-btn${trend === "month" ? " on" : ""}`} onClick={() => setTrend("month")}>월간</button>
+              </div>
+            </div>
             <div className="week-chart">
-              {weeks.map((w, i) => (
+              {bars.map((w, i) => (
                 <div key={i} className="week-col">
                   <span className="week-km">{w.km > 0 ? w.km.toFixed(0) : ""}</span>
-                  <div className="week-bar" style={{ height: `${Math.max((w.km / maxWeek) * 64, w.km > 0 ? 6 : 2)}px` }} />
+                  <div className="week-bar" style={{ height: `${Math.max((w.km / maxBar) * 64, w.km > 0 ? 6 : 2)}px` }} />
                   <span className="week-label">{w.label}</span>
                 </div>
               ))}
