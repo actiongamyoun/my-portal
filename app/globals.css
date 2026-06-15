@@ -587,3 +587,6 @@ input, textarea { font: inherit; color: inherit; }
 .camp-btn:hover { background: #e6f1e4; border-color: #3f8a48; }
 .camp-btn .material-icons-round { font-size: 19px; }
 .camp-coord-help { font-size: 11px; color: var(--muted); line-height: 1.5; margin: -2px 0 2px; }
+
+/* ── 캠핑 날씨 예보 대기 ── */
+.camp-day-na { color: var(--muted); font-size: 12px; }

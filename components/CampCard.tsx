@@ -8,7 +8,7 @@ type Camp = {
   id: number; name: string; lat: number; lon: number;
   bookUrl?: string; memo?: string;
 };
-type WeatherDay = { temp: number; desc: string; icon: string; pop: number };
+type WeatherDay = { temp: number; desc: string; icon: string; pop: number; date?: string };
 
 const SEED: Camp[] = [
   { id: 1, name: "울주해양레저스포츠캠핑센터", lat: 35.363, lon: 129.341, bookUrl: "https://xn--om2bi2o9qdy7a48exzk3vf68fzzd.kr/reserve/month", memo: "진하해수욕장 끝 · 주말 추첨제 · A구역 주차편함" },
@@ -42,8 +42,10 @@ function CampWeather({ lat, lon }: { lat: number; lon: number }) {
         {d.pop >= 30 && <span className="camp-pop"> 💧{d.pop}%</span>}
       </span>
     ) : (
-      <span className="camp-day"><b>{label}</b> –</span>
+      <span className="camp-day camp-day-na"><b>{label}</b> 예보 대기</span>
     );
+
+  if (!w.sat && !w.sun) return <span className="camp-wx-err">주말 예보 준비 중 (5일 이내 표시)</span>;
 
   return (
     <span className="camp-wx">
@@ -149,8 +151,14 @@ export default function CampCard() {
             </div>
           </div>
         ) : (
-          <div style={{ marginTop: 8, textAlign: "center" }}>
+          <div style={{ marginTop: 8, textAlign: "center", display: "flex", gap: 12, justifyContent: "center" }}>
             <button className="text-btn" onClick={() => setAdding(true)}>+ 캠핑장 추가</button>
+            {editing && (
+              <button className="text-btn" style={{ color: "var(--muted)" }}
+                onClick={() => { if (confirm("기본 캠핑장 4곳으로 초기화할까요? 직접 추가/수정한 내용은 사라집니다.")) setCamps(SEED); }}>
+                기본값 복원
+              </button>
+            )}
           </div>
         )}
       </div>
