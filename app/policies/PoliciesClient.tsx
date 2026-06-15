@@ -35,7 +35,7 @@ export default function PoliciesClient() {
     const offset = reset ? 0 : offsetRef.current;
     const params = new URLSearchParams({ category, q: submitted, offset: String(offset), limit: "20" });
     try {
-      const r = await fetch(`/api/policies/list?${params}`);
+      const r = await fetch(`/api/policies/list?${params}&t=${Date.now()}`, { cache: "no-store" });
       const d = await r.json();
       const next = d.policies ?? [];
       setPolicies((prev) => (reset ? next : [...prev, ...next]));

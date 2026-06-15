@@ -24,7 +24,7 @@ export default function NewsCard() {
     setErr(false);
     if (tab === "policy") {
       setPolicies(null);
-      fetch("/api/policies")
+      fetch(`/api/policies?t=${Date.now()}`, { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : Promise.reject()))
         .then((d) => setPolicies(d.policies))
         .catch(() => setErr(true));
