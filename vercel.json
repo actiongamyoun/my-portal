@@ -1,5 +1,5 @@
 {
   "crons": [
-    { "path": "/api/cron/collect-policies", "schedule": "0 21 * * *" }
+    { "path": "/api/cron/collect-policies", "schedule": "30 2 * * *" }
   ]
 }
