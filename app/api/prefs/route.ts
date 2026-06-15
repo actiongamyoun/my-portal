@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED = ["apps", "aitools", "todos", "memo"];
+const ALLOWED = ["apps", "aitools", "todos", "memo", "camps"];
 
 function sb() {
   return { url: process.env.NEXT_PUBLIC_SUPABASE_URL, key: process.env.SUPABASE_SERVICE_ROLE_KEY };

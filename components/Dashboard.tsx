@@ -5,6 +5,7 @@ import CalendarCard from "./CalendarCard";
 import BriefingCard from "./BriefingCard";
 import StocksCard from "./StocksCard";
 import RunsCard from "./RunsCard";
+import CampCard from "./CampCard";
 import PortfolioCard from "./PortfolioCard";
 import GmailCard from "./GmailCard";
 import TodoCard from "./TodoCard";
@@ -94,6 +95,7 @@ export default function Dashboard() {
         <div className="col">
           <GmailCard />
           <RunsCard />
+          <CampCard />
           <MemoCard />
         </div>
         <div className="col">

@@ -565,3 +565,25 @@ input, textarea { font: inherit; color: inherit; }
 .trend-toggle { display: flex; gap: 2px; padding: 2px; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; }
 .trend-btn { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 5px; color: var(--muted); }
 .trend-btn.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(22,32,43,0.1); }
+
+/* ── 캠핑 카드 ── */
+.band-forest .card-head { background: #e6f1e4; color: #2f6b3a; }
+.band-forest .card-head .material-icons-round { color: #3f8a48; }
+.camp-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.camp-row:last-of-type { border-bottom: none; }
+.camp-main { flex: 1; min-width: 0; }
+.camp-name { font-size: 14px; font-weight: 700; }
+.camp-wx { display: flex; gap: 12px; margin-top: 4px; font-size: 13px; }
+.camp-day b { color: var(--muted); font-weight: 600; margin-right: 2px; }
+.camp-pop { color: #1f6fe0; font-size: 11.5px; }
+.camp-wx-err { font-size: 12px; color: var(--muted); margin-top: 4px; display: inline-block; }
+.camp-memo { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.camp-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.camp-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--bg); border: 1px solid var(--line); color: #3f8a48;
+}
+.camp-btn:hover { background: #e6f1e4; border-color: #3f8a48; }
+.camp-btn .material-icons-round { font-size: 19px; }
+.camp-coord-help { font-size: 11px; color: var(--muted); line-height: 1.5; margin: -2px 0 2px; }
