@@ -13,7 +13,7 @@ type WeatherDay = { temp: number; desc: string; icon: string; pop: number };
 const SEED: Camp[] = [
   { id: 1, name: "울주해양레저스포츠캠핑센터", lat: 35.363, lon: 129.341, bookUrl: "https://xn--om2bi2o9qdy7a48exzk3vf68fzzd.kr/reserve/month", memo: "진하해수욕장 끝 · 주말 추첨제 · A구역 주차편함" },
   { id: 2, name: "영도 마리노 오토캠핑장", lat: 35.092, lon: 129.058, bookUrl: "https://www.yeongdo.go.kr/marinocamping/main.web", memo: "부산항대교 하부 · 진입 시 1차로 직진(조선방향)" },
-  { id: 3, name: "친수공원 북항오토캠핑장", lat: 35.103, lon: 129.041, bookUrl: "", memo: "북항 친수공원" },
+  { id: 3, name: "친수공원 북항오토캠핑장", lat: 35.103, lon: 129.041, bookUrl: "https://tickets.interpark.com/goods/21004842", memo: "북항 친수공원 · 인터파크 예약" },
   { id: 4, name: "대저캠핑장", lat: 35.201, lon: 128.961, bookUrl: "", memo: "강서구 대저생태공원" },
 ];
 
