@@ -590,3 +590,45 @@ input, textarea { font: inherit; color: inherit; }
 
 /* ── 캠핑 날씨 예보 대기 ── */
 .camp-day-na { color: var(--muted); font-size: 12px; }
+
+/* ── 캠핑 예약 일정 ── */
+.camp-resv { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.camp-dday { font-weight: 800; font-size: 12px; color: #fff; background: #3f8a48; border-radius: 6px; padding: 2px 7px; }
+.camp-resv-date { font-family: var(--mono); font-size: 11.5px; color: var(--ink); }
+.camp-cal-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 600; color: #fff; background: #4285f4;
+  border-radius: 6px; padding: 3px 8px;
+}
+.camp-cal-btn:disabled { opacity: 0.5; }
+.camp-resv-x { display: inline-flex; color: var(--muted); padding: 2px; }
+.camp-resv-add {
+  display: inline-block; margin-top: 6px; cursor: pointer;
+  font-size: 11.5px; color: #3f8a48; font-weight: 600;
+}
+.camp-resv-add:hover { text-decoration: underline; }
+.camp-resv-msg { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
+/* ── 환율 칩 강조 ── */
+.chip-fx { background: #eef3fb; border-color: #d4e2f5; }
+.chip-fx .material-icons-round { color: #2a6ca5; }
+.chip-fx .num { font-size: 14px; font-weight: 700; color: #1d5582; }
+
+/* ── 공유 버튼 ── */
+.share-btn {
+  display: inline-flex; align-items: center; margin-left: auto; padding: 2px 4px;
+  color: var(--muted); flex-shrink: 0;
+}
+.share-btn:hover { color: var(--accent); }
+.share-btn .material-icons-round { font-size: 16px; }
+.policy-share { display: inline-block; margin-top: 6px; margin-left: 12px; color: var(--accent); font-weight: 600; font-size: 12px; }
+.share-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: #fff; font-size: 13px; font-weight: 600;
+  padding: 9px 18px; border-radius: 999px; z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+
+/* ── 뉴스 항목 공유버튼 정렬 ── */
+.news-item { display: flex; align-items: flex-start; gap: 8px; }

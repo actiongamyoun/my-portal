@@ -7,6 +7,7 @@ import { useSyncedState } from "./useSyncedState";
 type Camp = {
   id: number; name: string; lat: number; lon: number;
   bookUrl?: string; memo?: string;
+  resv?: { checkin: string; checkout: string | null; site: string | null } | null;
 };
 type WeatherDay = { temp: number; desc: string; icon: string; pop: number; date?: string };
 
@@ -16,6 +17,19 @@ const SEED: Camp[] = [
   { id: 3, name: "친수공원 북항오토캠핑장", lat: 35.103, lon: 129.041, bookUrl: "https://tickets.interpark.com/goods/21004842", memo: "북항 친수공원 · 인터파크 예약" },
   { id: 4, name: "대저캠핑장", lat: 35.201, lon: 128.961, bookUrl: "https://www.daejeocamping.com/reservation/real_time", memo: "강서구 대저생태공원 · 실시간 예약" },
 ];
+
+function dday(checkin: string): string {
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const ci = new Date(checkin + "T00:00:00"); ci.setHours(0, 0, 0, 0);
+  const diff = Math.round((ci.getTime() - now.getTime()) / 86400000);
+  if (diff === 0) return "오늘";
+  if (diff > 0) return `D-${diff}`;
+  return `${-diff}일 지남`;
+}
+function fmtMD(d: string): string {
+  const [, m, day] = d.split("-");
+  return `${Number(m)}/${Number(day)}`;
+}
 
 function emoji(icon: string) {
   const c = icon?.slice(0, 2);
@@ -67,6 +81,57 @@ export default function CampCard() {
   const [memo, setMemo] = useState("");
 
   const reset = () => { setName(""); setCoord(""); setBookUrl(""); setMemo(""); setAdding(false); setEditId(null); };
+  const [resvBusy, setResvBusy] = useState<number | null>(null);
+  const [resvMsg, setResvMsg] = useState<{ id: number; text: string } | null>(null);
+
+  const onResvCapture = async (campId: number, file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) { setResvMsg({ id: campId, text: "사진이 너무 커요 (4MB 이하)" }); return; }
+    setResvBusy(campId); setResvMsg(null);
+    try {
+      const data = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result).split(",")[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const r = await fetch("/api/camp-reserve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: { data, media_type: file.type || "image/jpeg" } }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error ?? "fail");
+      setCamps((p) => p.map((c) => c.id === campId ? { ...c, resv: { checkin: d.checkin, checkout: d.checkout, site: d.site } } : c));
+      setResvMsg({ id: campId, text: `✓ ${fmtMD(d.checkin)}${d.checkout ? `~${fmtMD(d.checkout)}` : ""} 예약 인식됨` });
+    } catch (e) {
+      setResvMsg({ id: campId, text: (e as Error).message === "parse" ? "예약 정보를 못 읽었어요. 날짜가 보이게 캡처해 주세요" : "인식 실패 — 다시 시도해 주세요" });
+    } finally {
+      setResvBusy(null);
+    }
+  };
+
+  const addToCalendar = async (c: Camp) => {
+    if (!c.resv) return;
+    setResvBusy(c.id);
+    try {
+      const r = await fetch("/api/camp-reserve", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ camp: c.name, checkin: c.resv.checkin, checkout: c.resv.checkout, site: c.resv.site }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error ?? "fail");
+      setResvMsg({ id: c.id, text: "✓ 구글 캘린더 등록됨 (전날 알림)" });
+    } catch (e) {
+      setResvMsg({ id: c.id, text: (e as Error).message === "scope" ? "캘린더 권한이 필요해요 (재로그인)" : "캘린더 등록 실패" });
+    } finally {
+      setResvBusy(null);
+    }
+  };
+
+  const clearResv = (campId: number) =>
+    setCamps((p) => p.map((c) => c.id === campId ? { ...c, resv: null } : c));
 
   const parseCoord = (s: string): [number, number] | null => {
     const m = s.split(",").map((x) => parseFloat(x.trim()));
@@ -124,6 +189,29 @@ export default function CampCard() {
               </div>
               <CampWeather lat={c.lat} lon={c.lon} />
               {c.memo && <div className="camp-memo">📍 {c.memo}</div>}
+              {c.resv && (
+                <div className="camp-resv">
+                  <span className="camp-dday">{dday(c.resv.checkin)}</span>
+                  <span className="camp-resv-date">
+                    {fmtMD(c.resv.checkin)}{c.resv.checkout ? `~${fmtMD(c.resv.checkout)}` : ""}
+                    {c.resv.site ? ` · ${c.resv.site}` : ""}
+                  </span>
+                  <button className="camp-cal-btn" onClick={() => addToCalendar(c)} disabled={resvBusy === c.id}>
+                    <span className="material-icons-round" style={{ fontSize: 14 }}>event</span>캘린더
+                  </button>
+                  <button className="camp-resv-x" onClick={() => clearResv(c.id)} aria-label="예약 삭제">
+                    <span className="material-icons-round" style={{ fontSize: 14 }}>close</span>
+                  </button>
+                </div>
+              )}
+              <label className="camp-resv-add">
+                <input type="file" accept="image/*" hidden disabled={resvBusy === c.id}
+                  onChange={(e) => { onResvCapture(c.id, e.target.files?.[0]); e.currentTarget.value = ""; }} />
+                <span className="material-icons-round" style={{ fontSize: 13, verticalAlign: "-2px" }}>
+                  {resvBusy === c.id ? "hourglass_top" : "add_a_photo"}
+                </span> {resvBusy === c.id ? "인식 중…" : c.resv ? "예약 캡처 교체" : "예약 캡처 등록"}
+              </label>
+              {resvMsg?.id === c.id && <div className="camp-resv-msg">{resvMsg.text}</div>}
             </div>
             <div className="camp-actions">
               {c.bookUrl && (

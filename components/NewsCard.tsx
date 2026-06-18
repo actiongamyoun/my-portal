@@ -3,21 +3,35 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { POLICY_CATEGORIES } from "./policyCategories";
+import { shareItem } from "./share";
 import { useCollapse } from "./useCollapse";
 
 type News = { title: string; link: string; source: string; pubDate: string };
 type Policy = { id: number; title: string; summary: string | null; ministry: string | null; category: string | null; url: string; published_at: string | null };
 
+type TabId = "google" | "naver" | "ai" | "ship" | "policy";
+
+// 고정 키워드 탭: 네이버 검색을 미리 정한 쿼리로 호출
+const PRESET_QUERY: Record<string, string> = {
+  ai: "AI 인공지능 생성형AI 최신",
+  ship: "조선 수주 HD현대 선박 도장",
+};
 
 
 export default function NewsCard() {
   const { collapsed, toggle } = useCollapse("news");
-  const [tab, setTab] = useState<"google" | "naver" | "policy">("google");
+  const [tab, setTab] = useState<TabId>("google");
   const [query, setQuery] = useState("경제");
   const [input, setInput] = useState("경제");
   const [news, setNews] = useState<News[] | null>(null);
   const [policies, setPolicies] = useState<Policy[] | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
+  const [shareMsg, setShareMsg] = useState("");
+  const doShare = async (e: React.MouseEvent, title: string, url: string, summary?: string) => {
+    e.preventDefault(); e.stopPropagation();
+    const r = await shareItem(title, url, summary);
+    if (r === "copied") { setShareMsg("링크 복사됨"); setTimeout(() => setShareMsg(""), 1500); }
+  };
   const [err, setErr] = useState(false);
 
   useEffect(() => {
@@ -31,7 +45,10 @@ export default function NewsCard() {
       return;
     }
     setNews(null);
-    const url = tab === "google" ? "/api/news/google" : `/api/news/naver?q=${encodeURIComponent(query)}`;
+    let url: string;
+    if (tab === "google") url = "/api/news/google";
+    else if (tab === "naver") url = `/api/news/naver?q=${encodeURIComponent(query)}`;
+    else url = `/api/news/naver?q=${encodeURIComponent(PRESET_QUERY[tab] ?? "")}`;
     fetch(url)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => setNews(d.news))
@@ -67,6 +84,12 @@ export default function NewsCard() {
         <button className={`news-tab${tab === "naver" ? " active" : ""}`} onClick={() => setTab("naver")}>
           네이버 검색
         </button>
+        <button className={`news-tab${tab === "ai" ? " active" : ""}`} onClick={() => setTab("ai")}>
+          <span className="material-icons-round" style={{ fontSize: 13, verticalAlign: "-2px" }}>smart_toy</span> AI
+        </button>
+        <button className={`news-tab${tab === "ship" ? " active" : ""}`} onClick={() => setTab("ship")}>
+          <span className="material-icons-round" style={{ fontSize: 13, verticalAlign: "-2px" }}>directions_boat</span> 조선·선박
+        </button>
         <button className={`news-tab${tab === "policy" ? " active" : ""}`} onClick={() => setTab("policy")}>
           <span className="material-icons-round" style={{ fontSize: 13, verticalAlign: "-2px" }}>gavel</span> 정책
         </button>
@@ -82,7 +105,7 @@ export default function NewsCard() {
           />
         </div>
       )}
-      {err && <p className="empty">{tab === "naver" ? "네이버 API 키를 확인해 주세요 (.env)" : tab === "policy" ? "정책 데이터를 불러오지 못했어요. Supabase 설정을 확인해 주세요." : "뉴스를 불러오지 못했어요."}</p>}
+      {err && <p className="empty">{(tab === "naver" || tab === "ai" || tab === "ship") ? "네이버 API 키가 필요해요 (NAVER_CLIENT_ID/SECRET 환경변수)" : tab === "policy" ? "정책 데이터를 불러오지 못했어요. Supabase 설정을 확인해 주세요." : "뉴스를 불러오지 못했어요."}</p>}
       {!err && tab !== "policy" && !news && (<><div className="skeleton" /><div className="skeleton" style={{ width: "85%" }} /><div className="skeleton" style={{ width: "60%" }} /></>)}
       {!err && tab === "policy" && !policies && (<><div className="skeleton" /><div className="skeleton" style={{ width: "85%" }} /></>)}
       {tab === "policy" && policies?.length === 0 && <p className="empty">아직 수집된 정책이 없어요. 수집기가 첫 실행되면 채워집니다.</p>}
@@ -99,21 +122,28 @@ export default function NewsCard() {
                 <span className="policy-summary">
                   {p.summary ? `${c.emoji} ${p.summary}` : "요약이 아직 없어요."}
                   <a href={p.url} target="_blank" rel="noopener noreferrer" className="policy-link" onClick={(e) => e.stopPropagation()}>원문 보기 ↗</a>
+                  <button className="policy-share" onClick={(e) => doShare(e, p.title, p.url, p.summary ?? undefined)}>공유하기 ↗</button>
                 </span>
               )}
             </span>
           </div>
         );
       })}
+      {shareMsg && <div className="share-toast">{shareMsg}</div>}
       {tab === "policy" && policies && policies.length > 0 && (
         <Link href="/policies" className="policy-all">정책 아카이브 전체 보기 →</Link>
       )}
       {tab !== "policy" && news?.map((n, i) => (
         <a key={i} className="news-item" href={n.link} target="_blank" rel="noreferrer">
-          <div className="news-title">{n.title}</div>
-          <div className="news-meta">
-            {n.source && `${n.source} · `}{rel(n.pubDate)}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="news-title">{n.title}</div>
+            <div className="news-meta">
+              {n.source && `${n.source} · `}{rel(n.pubDate)}
+            </div>
           </div>
+          <button className="share-btn" onClick={(e) => doShare(e, n.title, n.link)} aria-label="공유">
+            <span className="material-icons-round">ios_share</span>
+          </button>
         </a>
       ))}
     </div>

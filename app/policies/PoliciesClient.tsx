@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { POLICY_CATEGORIES, CATEGORY_LIST, timeAgo } from "@/components/policyCategories";
+import { shareItem } from "@/components/share";
 
 type Policy = {
   id: number; title: string; summary: string | null;
@@ -28,6 +29,12 @@ export default function PoliciesClient() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<number | null>(null);
+  const [shareMsg, setShareMsg] = useState("");
+  const doShare = async (e: React.MouseEvent, title: string, url: string, summary?: string) => {
+    e.preventDefault(); e.stopPropagation();
+    const r = await shareItem(title, url, summary);
+    if (r === "copied") { setShareMsg("링크 복사됨"); setTimeout(() => setShareMsg(""), 1500); }
+  };
   const offsetRef = useRef(0);
 
   const fetchPage = useCallback(async (reset: boolean) => {
@@ -108,6 +115,7 @@ export default function PoliciesClient() {
                     <div className="pol-summary">
                       {p.summary ? `${meta.emoji} ${p.summary}` : "요약이 아직 없어요."}
                       <a href={p.url} target="_blank" rel="noopener noreferrer" className="policy-link" onClick={(e) => e.stopPropagation()}>원문 보기 ↗</a>
+                      <button className="policy-share" onClick={(e) => doShare(e, p.title, p.url, p.summary ?? undefined)}>공유하기 ↗</button>
                     </div>
                   )}
                 </div>
@@ -122,6 +130,7 @@ export default function PoliciesClient() {
       {!loading && policies.length < total && (
         <button className="pol-more" onClick={() => fetchPage(false)}>더보기 ({policies.length}/{total})</button>
       )}
+      {shareMsg && <div className="share-toast">{shareMsg}</div>}
     </main>
   );
 }
