@@ -13,8 +13,8 @@ type TabId = "google" | "naver" | "ai" | "ship" | "policy";
 
 // 고정 키워드 탭: 네이버 검색을 미리 정한 쿼리로 호출
 const PRESET_QUERY: Record<string, string> = {
-  ai: "AI 인공지능 생성형AI 최신",
-  ship: "조선 수주 HD현대 선박 도장",
+  ai: "AI 인공지능 OR 생성형AI OR 챗GPT",
+  ship: "조선업 OR 조선소 OR 선박수주 OR 선박도장",
 };
 
 
@@ -47,8 +47,8 @@ export default function NewsCard() {
     setNews(null);
     let url: string;
     if (tab === "google") url = "/api/news/google";
-    else if (tab === "naver") url = `/api/news/naver?q=${encodeURIComponent(query)}`;
-    else url = `/api/news/naver?q=${encodeURIComponent(PRESET_QUERY[tab] ?? "")}`;
+    else if (tab === "naver") url = `/api/news/search?q=${encodeURIComponent(query)}`;
+    else url = `/api/news/search?q=${encodeURIComponent(PRESET_QUERY[tab] ?? "")}`;
     fetch(url)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => setNews(d.news))
@@ -105,7 +105,7 @@ export default function NewsCard() {
           />
         </div>
       )}
-      {err && <p className="empty">{(tab === "naver" || tab === "ai" || tab === "ship") ? "네이버 API 키가 필요해요 (NAVER_CLIENT_ID/SECRET 환경변수)" : tab === "policy" ? "정책 데이터를 불러오지 못했어요. Supabase 설정을 확인해 주세요." : "뉴스를 불러오지 못했어요."}</p>}
+      {err && <p className="empty">{tab === "policy" ? "정책 데이터를 불러오지 못했어요. Supabase 설정을 확인해 주세요." : tab === "naver" ? "검색 결과를 불러오지 못했어요. 다른 키워드로 시도해 보세요." : "뉴스를 불러오지 못했어요. 잠시 후 다시 시도해 주세요."}</p>}
       {!err && tab !== "policy" && !news && (<><div className="skeleton" /><div className="skeleton" style={{ width: "85%" }} /><div className="skeleton" style={{ width: "60%" }} /></>)}
       {!err && tab === "policy" && !policies && (<><div className="skeleton" /><div className="skeleton" style={{ width: "85%" }} /></>)}
       {tab === "policy" && policies?.length === 0 && <p className="empty">아직 수집된 정책이 없어요. 수집기가 첫 실행되면 채워집니다.</p>}
