@@ -632,3 +632,12 @@ input, textarea { font: inherit; color: inherit; }
 
 /* ── 뉴스 항목 공유버튼 정렬 ── */
 .news-item { display: flex; align-items: flex-start; gap: 8px; }
+
+/* ── 캘린더 7일 날짜 그룹 ── */
+.event-day-group { margin-top: 8px; }
+.event-day-group:first-of-type { margin-top: 0; }
+.event-day-label {
+  font-size: 11.5px; font-weight: 700; color: var(--muted);
+  letter-spacing: 0.03em; margin-bottom: 2px; padding-bottom: 3px;
+  border-bottom: 1px solid var(--line);
+}

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCollapse } from "./useCollapse";
 
-type Ev = { id: string; title: string; start: string; allDay: boolean; location: string; link: string };
+type Ev = { id: string; title: string; start: string; end?: string; allDay: boolean; location: string; link: string };
 
 export default function CalendarCard() {
   const { collapsed, toggle } = useCollapse("calendar");
@@ -110,11 +110,27 @@ export default function CalendarCard() {
           timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false,
         }).format(new Date(e.start));
 
+  // 일정의 KST 날짜키 (YYYY-MM-DD)
+  const dayKey = (e: Ev) => {
+    if (e.allDay) return e.start.slice(0, 10);
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date(e.start));
+  };
+  const dayLabel = (key: string) => {
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
+    const tmr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 86400000));
+    if (key === today) return "오늘";
+    if (key === tmr) return "내일";
+    const d = new Date(key + "T00:00:00+09:00");
+    return new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short" }).format(d);
+  };
+
   return (
     <section className="card band-blue">
       <div className="card-head">
         <span className="material-icons-round">event</span>
-        <span className="card-title">오늘 일정</span>
+        <span className="card-title">다가오는 일정</span>
         {events && <span className="badge">{events.length}</span>}
               <button className="collapse-btn" onClick={toggle} aria-label={collapsed ? "펼치기" : "접기"}>
           <span className="material-icons-round">{collapsed ? "expand_more" : "expand_less"}</span>
@@ -151,16 +167,30 @@ export default function CalendarCard() {
 
       {err && <p className="empty">일정을 불러오지 못했어요. 다시 로그인해 보세요.</p>}
       {!err && !events && (<><div className="skeleton" /><div className="skeleton" style={{ width: "70%" }} /></>)}
-      {events?.length === 0 && <p className="empty">오늘 일정이 없어요. 여유로운 하루! 🎉</p>}
-      {events?.map((e) => (
-        <a key={e.id} className="event" href={e.link} target="_blank" rel="noreferrer">
-          <span className="event-time">{fmt(e)}</span>
-          <span>
-            <span className="event-title">{e.title}</span>
-            {e.location && <div className="event-loc">{e.location}</div>}
-          </span>
-        </a>
-      ))}
+      {events?.length === 0 && <p className="empty">다가오는 7일간 일정이 없어요. 여유로운 한 주! 🎉</p>}
+      {events && events.length > 0 && (() => {
+        const groups: { key: string; items: Ev[] }[] = [];
+        for (const e of events) {
+          const k = dayKey(e);
+          const last = groups[groups.length - 1];
+          if (last && last.key === k) last.items.push(e);
+          else groups.push({ key: k, items: [e] });
+        }
+        return groups.map((g) => (
+          <div key={g.key} className="event-day-group">
+            <div className="event-day-label">{dayLabel(g.key)}</div>
+            {g.items.map((e) => (
+              <a key={e.id} className="event" href={e.link} target="_blank" rel="noreferrer">
+                <span className="event-time">{fmt(e)}</span>
+                <span>
+                  <span className="event-title">{e.title}</span>
+                  {e.location && <div className="event-loc">{e.location}</div>}
+                </span>
+              </a>
+            ))}
+          </div>
+        ));
+      })()}
     </div>
       )}
     </section>
