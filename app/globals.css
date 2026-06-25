@@ -658,3 +658,30 @@ input, textarea { font: inherit; color: inherit; }
 .food-item:hover .food-name { color: #d97211; }
 .food-cat { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .food-dist { flex: none; font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: #b3590f; background: #fdeede; padding: 3px 8px; border-radius: 999px; }
+
+/* ── 맛집 반경 슬라이더 ── */
+.food-radius { background: var(--bg); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.food-radius-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 7px; }
+.food-radius-val { font-family: var(--mono); font-size: 13px; font-weight: 700; color: #d97211; }
+.food-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 999px; background: linear-gradient(90deg, #f0c89a, #d97211); outline: none; }
+.food-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid #d97211; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.food-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid #d97211; cursor: pointer; }
+.food-radius-ticks { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 5px; font-family: var(--mono); }
+
+/* ── Claude 맛집 추천 ── */
+.food-rec { margin-bottom: 12px; }
+.food-rec-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  background: linear-gradient(120deg, #d97211, #e8943d); color: #fff;
+}
+.food-rec-btn:hover { filter: brightness(1.05); }
+.food-rec-loading, .food-rec-err { font-size: 12.5px; color: var(--muted); text-align: center; padding: 8px; }
+.food-picks { background: #fffaf3; border: 1px solid #f0c89a; border-radius: 12px; padding: 11px 12px; }
+.food-picks-head { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 700; color: #b3590f; margin-bottom: 8px; }
+.food-pick { display: block; padding: 9px 10px; border-radius: 9px; background: var(--card); margin-bottom: 6px; border: 1px solid var(--line); }
+.food-pick:last-child { margin-bottom: 0; }
+.food-pick:hover { border-color: #d97211; }
+.food-pick-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.food-pick-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+.food-pick-reason { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 3px; }

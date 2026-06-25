@@ -31,6 +31,9 @@ export default function FoodCard({ count = 4 }: { count?: number }) {
   const [error, setError] = useState("");
   const [usedFallback, setUsedFallback] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [picks, setPicks] = useState<(Place & { reason: string })[] | null>(null);
+  const [recBusy, setRecBusy] = useState(false);
+  const [recErr, setRecErr] = useState("");
 
   const fetchPlaces = useCallback(async (lat: number, lng: number, r: number) => {
     setStatus("loading"); setError("");
@@ -38,7 +41,7 @@ export default function FoodCard({ count = 4 }: { count?: number }) {
       const res = await fetch(`/api/places?lat=${lat}&lng=${lng}&radius=${r}`, { cache: "no-store" });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || "요청 실패");
-      setFood(data.food ?? []); setCafe(data.cafe ?? []); setStatus("ready");
+      setFood(data.food ?? []); setCafe(data.cafe ?? []); setStatus("ready"); setPicks(null); setRecErr("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "불러오기 실패"); setStatus("error");
     }
@@ -70,6 +73,26 @@ export default function FoodCard({ count = 4 }: { count?: number }) {
     if (coords) fetchPlaces(coords.lat, coords.lng, r);
   };
 
+  // Claude에게 선별 추천 요청
+  const askClaude = async () => {
+    setRecBusy(true); setRecErr(""); setPicks(null);
+    try {
+      const r = await fetch("/api/places/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ food, cafe, primary: slot.primary }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error ?? "fail");
+      setPicks(d.picks ?? []);
+    } catch (e) {
+      const m = (e as Error).message;
+      setRecErr(m === "no-key" ? "ANTHROPIC_API_KEY를 확인해 주세요" : m === "empty" ? "추천할 가게가 없어요" : "추천 실패 — 다시 시도해 주세요");
+    } finally {
+      setRecBusy(false);
+    }
+  };
+
   const slot = getSlot(new Date().getHours());
   const sections = slot.primary === "food"
     ? [{ primary: true, emoji: "🍚", title: "밥집", data: food }, { primary: false, emoji: "☕", title: "카페", data: cafe }]
@@ -91,6 +114,40 @@ export default function FoodCard({ count = 4 }: { count?: number }) {
       {!collapsed && (
       <div className="card-body">
         <div className="food-slot">{slot.emoji} {slot.msg}</div>
+
+        {status === "ready" && (food.length > 0 || cafe.length > 0) && (
+          <div className="food-rec">
+            {!picks && !recBusy && !recErr && (
+              <button className="food-rec-btn" onClick={askClaude}>
+                <span className="material-icons-round" style={{ fontSize: 16 }}>auto_awesome</span>
+                Claude에게 추천받기
+              </button>
+            )}
+            {recBusy && <div className="food-rec-loading">✨ Claude가 고르는 중…</div>}
+            {recErr && (
+              <div className="food-rec-err">{recErr}
+                <button className="text-btn" onClick={askClaude} style={{ marginLeft: 6 }}>다시</button>
+              </div>
+            )}
+            {picks && picks.length > 0 && (
+              <div className="food-picks">
+                <div className="food-picks-head">
+                  <span>✨ Claude 추천</span>
+                  <button className="text-btn" onClick={askClaude} style={{ fontSize: 11 }}>다시 추천</button>
+                </div>
+                {picks.map((p) => (
+                  <a key={p.id} className="food-pick" href={p.url} target="_blank" rel="noreferrer">
+                    <div className="food-pick-top">
+                      <span className="food-pick-name">{p.name}</span>
+                      <span className="food-dist">{fmtDist(p.distance)}</span>
+                    </div>
+                    <div className="food-pick-reason">{p.reason}</div>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="food-radius">
           <div className="food-radius-head">
