@@ -20,8 +20,11 @@ const FALLBACK = { lat: 35.1577, lng: 129.0594, label: "부산 서면" };
 const fmtDist = (m: number) => (!Number.isFinite(m) ? "" : m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`);
 const shortCat = (c: string) => (c ? c.split(">").map((s) => s.trim()).pop() || c : "");
 
-export default function FoodCard({ radius = 1000, count = 4 }: { radius?: number; count?: number }) {
+const DEFAULT_RADIUS = 1000;
+
+export default function FoodCard({ count = 4 }: { count?: number }) {
   const { collapsed, toggle } = useCollapse("food");
+  const [radius, setRadius] = useState(DEFAULT_RADIUS);
   const [status, setStatus] = useState<"locating" | "loading" | "ready" | "error">("locating");
   const [food, setFood] = useState<Place[]>([]);
   const [cafe, setCafe] = useState<Place[]>([]);
@@ -29,37 +32,43 @@ export default function FoodCard({ radius = 1000, count = 4 }: { radius?: number
   const [usedFallback, setUsedFallback] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
-  const fetchPlaces = useCallback(async (lat: number, lng: number) => {
+  const fetchPlaces = useCallback(async (lat: number, lng: number, r: number) => {
     setStatus("loading"); setError("");
     try {
-      const res = await fetch(`/api/places?lat=${lat}&lng=${lng}&radius=${radius}`, { cache: "no-store" });
+      const res = await fetch(`/api/places?lat=${lat}&lng=${lng}&radius=${r}`, { cache: "no-store" });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || "요청 실패");
       setFood(data.food ?? []); setCafe(data.cafe ?? []); setStatus("ready");
     } catch (e) {
       setError(e instanceof Error ? e.message : "불러오기 실패"); setStatus("error");
     }
-  }, [radius]);
+  }, []);
 
   const locate = useCallback(() => {
     setStatus("locating"); setError("");
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setUsedFallback(true); setCoords(FALLBACK); fetchPlaces(FALLBACK.lat, FALLBACK.lng); return;
+      setUsedFallback(true); setCoords(FALLBACK); fetchPlaces(FALLBACK.lat, FALLBACK.lng, radius); return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUsedFallback(false);
         const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setCoords(c); fetchPlaces(c.lat, c.lng);
+        setCoords(c); fetchPlaces(c.lat, c.lng, radius);
       },
-      () => { setUsedFallback(true); setCoords(FALLBACK); fetchPlaces(FALLBACK.lat, FALLBACK.lng); },
+      () => { setUsedFallback(true); setCoords(FALLBACK); fetchPlaces(FALLBACK.lat, FALLBACK.lng, radius); },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
     );
-  }, [fetchPlaces]);
+  }, [fetchPlaces, radius]);
 
-  useEffect(() => { locate(); }, [locate]);
+  useEffect(() => { locate(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const refresh = () => { if (coords) fetchPlaces(coords.lat, coords.lng); else locate(); };
+  const refresh = () => { if (coords) fetchPlaces(coords.lat, coords.lng, radius); else locate(); };
+
+  // 슬라이더로 반경 변경 → 현재 위치로 즉시 재조회
+  const onRadiusChange = (r: number) => {
+    setRadius(r);
+    if (coords) fetchPlaces(coords.lat, coords.lng, r);
+  };
 
   const slot = getSlot(new Date().getHours());
   const sections = slot.primary === "food"
@@ -82,6 +91,22 @@ export default function FoodCard({ radius = 1000, count = 4 }: { radius?: number
       {!collapsed && (
       <div className="card-body">
         <div className="food-slot">{slot.emoji} {slot.msg}</div>
+
+        <div className="food-radius">
+          <div className="food-radius-head">
+            <span>검색 반경</span>
+            <span className="food-radius-val">{fmtDist(radius)}</span>
+          </div>
+          <input
+            type="range" min="300" max="20000" step="100" value={radius}
+            onChange={(e) => setRadius(Number(e.target.value))}
+            onMouseUp={(e) => onRadiusChange(Number((e.target as HTMLInputElement).value))}
+            onTouchEnd={(e) => onRadiusChange(Number((e.target as HTMLInputElement).value))}
+            className="food-slider"
+            aria-label="검색 반경"
+          />
+          <div className="food-radius-ticks"><span>300m</span><span>5km</span><span>10km</span><span>20km</span></div>
+        </div>
 
         {usedFallback && status !== "locating" && (
           <div className="food-note">
